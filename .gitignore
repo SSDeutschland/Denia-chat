@@ -13,6 +13,9 @@ desktop.ini
 # Claude Code
 .claude/
 
+# Debug logs (may contain personal conversation data)
+debug记录/
+
 # Temp files
 *.bak
 *.orig
