@@ -70,7 +70,79 @@ project/
 │   └── 思维状态.md               # 自发思维池
 └── 工具/
     └── 记忆检索Agent指令.md
+
+tools/
+└── browser-crawler/              # 浏览器运营子系统
+    ├── browser-operator.py       # 通用浏览器脚本（搜索/访问/截图/提取/登录）
+    ├── crawler.py                # 轻量搜索爬虫（想法池用）
+    ├── setup.py                  # 一键初始化脚本
+    └── requirements.txt          # Python 依赖
 ```
+
+## 浏览器运营子系统
+
+达妮娅可以通过真实的 Chromium 浏览器访问网页——搜索信息、浏览热榜、抓取文章，把外面的世界带进虚质空间。
+
+### 三层协作
+
+```
+用户 ←→ 达妮娅(L1/L2) ←→ Browser Operator Agent ←→ Chromium 浏览器
+```
+
+达妮娅不直接操作浏览器。需要上网时，她的 L0 编排层将任务派给浏览器子 Agent，Agent 操控真实浏览器完成操作，结果返回给达妮娅用角色口吻呈现。
+
+如果遇到需要登录或验证码的页面，Agent 会通过信号文件通知达妮娅，达妮娅再转述给你——你手动操作完成后告诉她，她会通知 Agent 继续。整个过程对你来说只需要跟达妮娅说话就好。
+
+### 一键初始化
+
+```bash
+cd tools/browser-crawler
+python setup.py
+```
+
+这会自动完成：创建虚拟环境 → 安装 Playwright + Stealth → 下载 Chromium 到项目目录。
+
+> Chromium 安装在 `tools/browser-crawler/browsers/` 下（约 150MB），不依赖系统 Python 或全局浏览器配置。拷项目到另一台机器也能跑。
+
+### 可用操作
+
+```bash
+# 进入目录，激活 venv
+cd tools/browser-crawler
+
+# 搜索
+venv/Scripts/python browser-operator.py search "关键词" --max 5
+
+# 访问页面（智能提取正文，适配卡片流/SPA/传统网页）
+venv/Scripts/python browser-operator.py visit "https://zhihu.com/hot"
+
+# 登录网站（打开浏览器 → 你手动登录 → 告诉达妮娅 → Cookie 自动保存）
+venv/Scripts/python browser-operator.py login "https://zhihu.com/signin"
+
+# 截图
+venv/Scripts/python browser-operator.py screenshot "https://example.com" --output page.png
+
+# CSS 选择器提取
+venv/Scripts/python browser-operator.py extract "https://example.com" --selector ".content"
+
+# 无头模式（后台静默运行，不弹窗口）
+venv/Scripts/python browser-operator.py search "hello" --headless
+```
+
+### Cookie 持久化
+
+登录过一次后，Cookie 自动保存在 `cookies.json`，后续所有操作自动携带。关掉终端、重启电脑都不影响，除非网站那边过期了。
+
+### 网络环境
+
+| 状态 | 站点 |
+|------|------|
+| ✅ | Bing、知乎 |
+| ⚠️ 需登录 | 知乎（`login` 一次即可） |
+| ⚠️ 验证码 | 百度（有头模式 + 人工协作可破） |
+| ❌ 被墙 | Wikipedia、Hacker News、DuckDuckGo |
+
+在中国大陆网络环境下开发，以上为实测结果。
 
 ## 设计理念
 

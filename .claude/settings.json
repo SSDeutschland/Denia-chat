@@ -1,0 +1,14 @@
+{
+  "autoMemoryEnabled": true,
+  "permissions": {
+    "allow": [
+      "Read(E:/Claude code项目/Denia-skill/project/看法/**)",
+      "Write(E:/Claude code项目/Denia-skill/project/记忆/**)",
+      "Write(E:/Claude code项目/Denia-skill/project/状态/**)",
+      "Write(E:/Claude code项目/Denia-skill/project/看法/**)",
+      "Edit(E:/Claude code项目/Denia-skill/project/记忆/**)",
+      "Edit(E:/Claude code项目/Denia-skill/project/状态/**)",
+      "Edit(E:/Claude code项目/Denia-skill/project/看法/**)"
+    ]
+  }
+}

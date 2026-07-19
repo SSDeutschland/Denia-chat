@@ -11,10 +11,25 @@ desktop.ini
 .vscode/
 
 # Claude Code
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/skills/
+!.claude/agents/
 
 # Debug logs (may contain personal conversation data)
 debug记录/
+
+# Browser crawler runtime files
+tools/browser-crawler/daemon*.log
+tools/browser-crawler/cookies.json
+tools/browser-crawler/*.png
+tools/browser-crawler/*_test.txt
+tools/browser-crawler/*_test.json
+tools/browser-crawler/*_output.json
+
+# Large binaries
+*.zip
+*.7z
 
 # Temp files
 *.bak
