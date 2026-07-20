@@ -29,22 +29,16 @@ E:/Claude code项目/Denia-skill/tools/browser-crawler/venv/Scripts/python
 E:/Claude code项目/Denia-skill/tools/browser-crawler/daemon-client.py
 ```
 
-每次收到任务时先检查 daemon 是否在运行：
+每次收到任务时先用 `ensure` 保证 daemon 就绪（一条命令搞定：已运行则直接返回，未运行则自动启动并等待就绪）：
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py health
-# → {"ok": true, "alive": true, ...}   已运行，直接使用
-# → {"ok": false, ...} 或 连接失败      需要启动
+cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py ensure
+# → {"ok": true, "started": false, ...}  已在运行，直接使用
+# → {"ok": true, "started": true, ...}   新启动并就绪
+# → {"ok": false, ...}                    启动超时，查看 daemon.log
 ```
 
-如果未运行，后台启动：
-
-```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler"
-nohup venv/Scripts/python browser-operator.py daemon --port 9876 > daemon.log 2>&1 &
-sleep 3  # 等浏览器启动
-```
-
+> ⚠️ **不要用 `nohup ... &` 手动启动 daemon**——Windows Git Bash 下会 exit 127。启动只发 `ensure`。
 > ⚠️ 不要每次任务都重启 daemon。浏览器常驻，Cookie 会话保持整个 session。
 
 ## 浏览策略：先看，再深挖
