@@ -48,6 +48,19 @@ cd Denia-chat
 /denia
 ```
 
+### 网页模式（GUI）
+
+除了终端，达妮娅还有一个独立的聊天网页——和终端共用同一套 skill 与记忆，封装真实的 Claude Code 运行时。
+
+```bash
+# Windows：双击 启动达妮娅GUI.bat（首次运行会自动建 venv 装依赖）
+# 浏览器打开 http://127.0.0.1:8765，点 ⚙ 选模型预设后开始聊
+```
+
+首次使用前，复制 `GUI/presets.json.example` 为 `GUI/presets.json` 填入你的模型预设，复制 `GUI/.env.local.example` 为 `GUI/.env.local` 填入接口地址与密钥。这两个文件含密钥，已被 `.gitignore` 排除，只存在你本机；上传的图片、导出的对话记录、会话存档也都留在本地 `GUI/out/`，不会入库。
+
+网页模式特性：表情包渲染、图片识别（含盲模型识图转接）、存档续接、对话导出、上下文压缩、双形态配色。
+
 ## 项目结构
 
 ```

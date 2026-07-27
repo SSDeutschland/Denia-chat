@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-form="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>与达妮娅连接</title>
+<style>
+  /* ══════════════════════════════════════════════════════════════
+     达妮娅 GUI · 双形态主题（贴合角色白/黑两形态设定）
+       黑色形态 = Dark  —— 蓝黑(6,27,71) / 蓝紫(90,111,237) / 暗光发色粉
+       白色形态 = Light —— 白 / 粉(252,232,240) / 红手套(230,51,54)
+     粉发是横跨两态的「达妮娅签名色」。虚质意象：泡泡 + 星芒。
+     视觉层来自 前端设计/设计稿；后端逻辑（WS/预设/权限/流式/ESC）完整保留。
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── 黑色形态（默认） ── */
+  :root, [data-form="dark"]{
+    --bg-0:#04091f; --bg-1:#061b47; --bg-2:#0c2559;
+    --panel:rgba(8,24,60,.72);
+    --edge:#1b3a7a; --edge-soft:#132c5e;
+    --accent:#5a6fed; --accent-soft:#8a97f2; --accent-deep:#3b4bc4;
+    --sign:#f3b9d6; --sign-soft:#e79ec4;
+    --text:#eaf0ff; --text-dim:#9fb0d8; --text-faint:#5f6f9c;
+    --bubble-dania:rgba(30,48,104,.62); --bubble-dania-edge:#2a4488;
+    --bubble-me:rgba(90,111,237,.20); --bubble-me-edge:#4557b8;
+    --l1-tint:rgba(138,151,242,.08); --l1-bar:#5a6fed;
+    --warn:#e79ec4; --ok:#8fd6c0;
+    --glow:rgba(90,111,237,.55); --halo-b:rgba(120,150,255,.12);
+    --scene:radial-gradient(1200px 720px at 76% -10%, rgba(90,111,237,.20), transparent 60%),
+            radial-gradient(900px 640px at 6% 110%, rgba(60,80,200,.14), transparent 55%),
+            var(--bg-0);
+    --bubble-fill:rgba(150,180,255,.14); --bubble-stroke:rgba(160,190,255,.30);
+    --avatar-ring:rgba(120,150,255,.45);
+  }
+  /* ── 白色形态 ── */
+  [data-form="light"]{
+    --bg-0:#fff4f8; --bg-1:#fdeaf1; --bg-2:#ffffff;
+    --panel:rgba(255,250,252,.78);
+    --edge:#f3cede; --edge-soft:#f7dde8;
+    --accent:#e63336; --accent-soft:#ef6d78; --accent-deep:#c62a34;
+    --sign:#f06aa0; --sign-soft:#f48cb6;
+    --text:#3a2b33; --text-dim:#8a6f7c; --text-faint:#c2a6b3;
+    --bubble-dania:#ffffff; --bubble-dania-edge:#f3d3e0;
+    --bubble-me:rgba(230,51,54,.08); --bubble-me-edge:#f0bcc2;
+    --l1-tint:rgba(240,106,160,.07); --l1-bar:#f06aa0;
+    --warn:#d05a7a; --ok:#4bb89a;
+    --glow:rgba(240,106,160,.45); --halo-b:rgba(240,106,160,.18);
+    --scene:radial-gradient(1200px 720px at 78% -12%, rgba(240,106,160,.16), transparent 58%),
+            radial-gradient(900px 640px at 4% 112%, rgba(230,51,54,.07), transparent 55%),
+            var(--bg-0);
+    --bubble-fill:rgba(255,255,255,.55); --bubble-stroke:rgba(240,106,160,.28);
+    --avatar-ring:rgba(240,106,160,.45);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--scene); color:var(--text); height:100dvh;
+    display:flex; justify-content:center; align-items:stretch; overflow:hidden;
+    transition:background .6s ease, color .6s ease;
+  }
+
+  /* ── 背景泡泡 + 星芒（虚质意象，纯装饰） ── */
+  .bubbles{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+  .bub{position:absolute; bottom:-160px; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, var(--bubble-fill), transparent 62%);
+    border:1px solid var(--bubble-stroke);
+    box-shadow:inset 0 0 30px var(--bubble-fill), 0 0 24px var(--halo-b);
+    animation:rise-bub linear infinite; transition:background .6s, border-color .6s}
+  @keyframes rise-bub{
+    0%{transform:translateY(0) translateX(0) scale(.9); opacity:0}
+    12%{opacity:.75} 88%{opacity:.55}
+    100%{transform:translateY(-118dvh) translateX(30px) scale(1.05); opacity:0}}
+  .spark{position:absolute; color:var(--accent-soft); font-size:11px;
+    animation:twinkle ease-in-out infinite; opacity:.6}
+  @keyframes twinkle{0%,100%{opacity:.15; transform:scale(.7)}50%{opacity:.85; transform:scale(1.1)}}
+
+  /* ── 外壳：侧边栏 + 主聊天 ── */
+  .shell{width:100%; max-width:836px; height:100dvh; display:flex; position:relative; z-index:1}
+
+  .sidebar{width:64px; flex:0 0 auto; display:flex; flex-direction:column; align-items:center;
+    gap:6px; padding:16px 0; background:var(--panel); backdrop-filter:blur(10px);
+    border-left:1px solid var(--edge-soft); border-right:1px solid var(--edge);
+    position:relative; z-index:2}  /* 高于 .app(z1)，否则 data-tip 提示框被聊天区压住 */
+  .sb-logo{width:40px; height:40px; border-radius:14px; margin-bottom:10px; flex:0 0 auto;
+    background-image:var(--avatar-img); background-size:cover; background-position:center 18%;
+    box-shadow:0 0 0 1.5px var(--avatar-ring), 0 0 14px var(--glow)}
+  .sb-btn{width:44px; height:44px; border-radius:13px; border:1px solid transparent;
+    background:none; cursor:pointer; color:var(--text-dim); font-size:19px; line-height:1;
+    display:flex; align-items:center; justify-content:center; position:relative;
+    transition:color .15s, background .15s, border-color .15s}
+  .sb-btn:hover{color:var(--accent-soft); background:var(--l1-tint); border-color:var(--edge)}
+  .sb-btn.active{color:var(--accent-soft); background:var(--l1-tint); border-color:var(--accent)}
+  .sb-btn.active::before{content:""; position:absolute; left:-16px; top:50%; transform:translateY(-50%);
+    width:3px; height:20px; border-radius:3px; background:var(--accent); box-shadow:0 0 8px var(--glow)}
+  .sb-btn[data-tip]:hover::after{content:attr(data-tip); position:absolute; left:52px; top:50%;
+    transform:translateY(-50%); white-space:nowrap; font-size:12px; padding:5px 10px;
+    background:var(--bg-2); color:var(--text); border:1px solid var(--edge); border-radius:9px;
+    box-shadow:0 4px 14px rgba(0,0,0,.2); z-index:5; pointer-events:none}
+  .sb-spacer{flex:1}
+
+  .app{flex:1; min-width:0; height:100dvh; display:flex; flex-direction:column;
+    background:linear-gradient(180deg, var(--panel), transparent 40%, var(--panel));
+    border-right:1px solid var(--edge-soft); position:relative; z-index:1; backdrop-filter:blur(2px)}
+
+  /* ── 顶栏 ── */
+  header{display:flex; align-items:center; gap:13px; padding:14px 20px;
+    border-bottom:1px solid var(--edge); background:var(--panel); backdrop-filter:blur(10px)}
+  .avatar{width:56px; height:56px; border-radius:50%; flex:0 0 auto; position:relative;
+    background-image:var(--avatar-img); background-size:cover; background-position:center 18%;
+    box-shadow:0 0 0 2px var(--avatar-ring), 0 0 18px var(--glow)}
+  .avatar::after{content:""; position:absolute; inset:-5px; border-radius:50%;
+    border:1px solid var(--avatar-ring); animation:pulse 3.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.14);opacity:.12}}
+  .who{flex:1; min-width:0}
+  .who .name{font-size:16px; font-weight:600; letter-spacing:.6px; display:flex; align-items:center; gap:8px}
+  .who .badge{font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px;
+    background:var(--l1-tint); color:var(--accent-soft); border:1px solid var(--edge)}
+  .who .sub{font-size:11.5px; color:var(--text-faint); margin-top:2px}
+  .hd-actions{display:flex; align-items:center; gap:4px}
+  .status{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim); margin-right:6px}
+  .dot{width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 9px var(--accent)}
+  .dot.off{background:var(--warn); box-shadow:0 0 8px var(--warn)}
+  .dot.busy{background:var(--sign); box-shadow:0 0 8px var(--sign); animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  .icon-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:17px;
+    padding:6px 8px;border-radius:10px;line-height:1;transition:color .15s,background .15s}
+  .icon-btn:hover{color:var(--accent-soft);background:var(--l1-tint)}
+
+  /* ── 消息流 ── */
+  .stream{flex:1; overflow-y:auto; padding:24px 20px 10px; display:flex; flex-direction:column; gap:16px}
+  .stream::-webkit-scrollbar{width:8px}
+  .stream::-webkit-scrollbar-thumb{background:var(--edge); border-radius:4px}
+  .row{display:flex; gap:11px; max-width:100%; animation:msg-in .4s ease}
+  @keyframes msg-in{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:translateY(0)}}
+  .row.me{flex-direction:row-reverse}
+  .mini{width:40px;height:40px;border-radius:50%;flex:0 0 auto;margin-top:2px}
+  .mini.dania{background-image:var(--avatar-img); background-size:cover; background-position:center 18%;
+    box-shadow:0 0 0 1.5px var(--avatar-ring)}
+  .mini.me{background:linear-gradient(135deg,var(--accent-soft),var(--accent-deep));
+    background-size:cover; background-position:center;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;
+    cursor:pointer; position:relative; transition:box-shadow .15s}
+  .mini.me:hover{box-shadow:0 0 0 2px var(--accent-soft), 0 0 12px var(--glow)}
+  .mini.me::after{content:"换"; position:absolute; inset:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff;
+    background:rgba(0,0,0,.5); opacity:0; transition:opacity .15s}
+  .mini.me:hover::after{opacity:1}
+  .mini.me.has-img{color:transparent}
+  .bubble-wrap{display:flex; flex-direction:column; gap:6px; min-width:0; max-width:76%}
+  .row.me .bubble-wrap{align-items:flex-end}
+  .bubble{padding:12px 16px; border-radius:18px; font-size:14.5px; line-height:1.75;
+    white-space:pre-wrap; word-break:break-word; min-height:1.75em;
+    box-shadow:0 2px 14px rgba(0,0,0,.10); transition:background .6s, border-color .6s}
+  .row.dania .bubble{background:var(--bubble-dania); border:1px solid var(--bubble-dania-edge);
+    border-top-left-radius:6px; color:var(--text); backdrop-filter:blur(4px)}
+  .row.me .bubble{background:var(--bubble-me); border:1px solid var(--bubble-me-edge);
+    border-top-right-radius:6px}
+  .bubble .caret{display:inline-block;width:2px;height:1em;background:var(--accent);
+    vertical-align:text-bottom;animation:blink .9s step-end infinite;margin-left:1px}
+  /* 表情包：L2 内嵌图像标记渲染结果。单独成句或配文字都在同一个气泡里 */
+  .bubble img.sticker{display:inline-block; height:80px; max-width:180px; border-radius:12px;
+    vertical-align:middle; margin:2px 3px; box-shadow:0 2px 10px rgba(0,0,0,.12)}
+
+  .l1{align-self:flex-start; max-width:76%; margin-left:51px}
+  .l1 .toggle{background:none;border:none;cursor:pointer; color:var(--text-faint);
+    font-size:12px; padding:3px 0; display:flex; align-items:center; gap:6px; font-family:inherit}
+  .l1 .toggle:hover{color:var(--accent-soft)}
+  .l1 .arrow{transition:transform .2s; display:inline-block; font-size:9px}
+  .l1.open .arrow{transform:rotate(90deg)}
+  .l1 .body{display:none; margin-top:7px; padding:11px 14px; font-size:13px; line-height:1.72;
+    color:var(--text-dim); background:var(--l1-tint);
+    border-left:2px solid var(--l1-bar); border-radius:0 12px 12px 0;
+    white-space:pre-wrap; font-style:italic}
+  .l1.open .body{display:block; animation:msg-in .3s ease}
+
+  .hint{align-self:flex-start; margin-left:51px; font-size:11.5px; color:var(--text-faint);
+        display:flex; align-items:center; gap:7px}
+  .hint::before{content:"◌"; animation:spin 2s linear infinite; display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .sys{align-self:center; font-size:11px; color:var(--text-faint); opacity:.9;
+    background:var(--l1-tint); padding:4px 12px; border-radius:20px; border:1px solid var(--edge-soft);
+    text-align:center; max-width:90%}
+
+  /* ── 输入栏 ── */
+  .composer-wrap{border-top:1px solid var(--edge); background:var(--panel); backdrop-filter:blur(10px)}
+  .composer{display:flex; gap:11px; padding:14px 18px 18px}
+  /* 图片上传：＋按钮 + 待发预览条 + 消息内缩略图 */
+  .plus{flex:0 0 auto; align-self:flex-end; width:46px; height:46px; border-radius:14px;
+    border:1px solid var(--edge); background:var(--bg-2); color:var(--text-dim);
+    font-size:21px; line-height:1; cursor:pointer; display:none;
+    align-items:center; justify-content:center;
+    transition:color .15s, border-color .15s, box-shadow .2s}
+  .plus:hover{color:var(--accent-soft); border-color:var(--accent); box-shadow:0 0 0 3px var(--l1-tint)}
+  .img-strip{display:none; gap:8px; padding:12px 18px 0}
+  .img-strip.show{display:flex}
+  .img-chip{position:relative; width:56px; height:56px; border-radius:10px; overflow:hidden;
+    border:1px solid var(--edge); animation:msg-in .25s ease}
+  .img-chip img{width:100%; height:100%; object-fit:cover; display:block}
+  .img-chip .x{position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%;
+    background:rgba(0,0,0,.55); color:#fff; font-size:10px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center}
+  .bubble.img-only{padding:6px}
+  .bubble img.att{display:block; max-width:240px; max-height:200px; border-radius:12px}
+  textarea{flex:1; resize:none; height:46px; max-height:130px; padding:12px 15px;
+    background:var(--bg-2); border:1px solid var(--edge); border-radius:14px;
+    color:var(--text); font-family:inherit; font-size:14px; line-height:1.5;
+    outline:none; transition:border-color .2s, box-shadow .2s}
+  textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--l1-tint)}
+  textarea::placeholder{color:var(--text-faint)}
+  .send{flex:0 0 auto; align-self:flex-end; height:46px; padding:0 22px; border:none;
+    border-radius:14px; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600;
+    color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    box-shadow:0 3px 16px var(--glow); transition:filter .15s, transform .1s, opacity .15s}
+  .send:hover{filter:brightness(1.12)}
+  .send:active{transform:translateY(1px)}
+  .send:disabled{opacity:.4; cursor:default; filter:none; box-shadow:none}
+
+  /* ── 权限弹窗 ── */
+  .perm-overlay{position:absolute; inset:0; background:rgba(2,6,20,.68); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:20; padding:24px}
+  .perm-overlay.show{display:flex}
+  [data-form="light"] .perm-overlay{background:rgba(90,40,60,.30)}
+  .perm-card{width:100%; max-width:390px; background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--accent); border-radius:20px; padding:22px;
+    box-shadow:0 16px 54px var(--glow); animation:rise .25s ease}
+  @keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .perm-card .top{display:flex; align-items:center; gap:12px; margin-bottom:14px}
+  .perm-card .top .avatar{width:38px;height:38px}
+  .perm-card .top .t{font-size:14.5px;font-weight:600}
+  .perm-card .desc{font-size:14.5px; line-height:1.65; margin-bottom:9px}
+  .perm-card .detail{font-size:11.5px; color:var(--text-faint); background:var(--l1-tint);
+    border-radius:9px; padding:9px 11px; margin-bottom:16px; word-break:break-all;
+    font-family:ui-monospace,Consolas,monospace; max-height:82px; overflow:auto}
+  .perm-card .btns{display:flex; gap:11px}
+  .perm-card button{flex:1; height:42px; border:none; border-radius:12px; cursor:pointer;
+    font-family:inherit; font-size:14px; font-weight:600; transition:filter .15s}
+  .perm-card .allow{color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-deep))}
+  .perm-card .allow.danger{background:linear-gradient(135deg,var(--warn),var(--accent-deep))}
+  .perm-card .deny{color:var(--text-dim); background:var(--bg-2); border:1px solid var(--edge)}
+  .perm-card button:hover{filter:brightness(1.15)}
+  /* bypass 开启时侧边栏按钮的警示态 */
+  .sb-btn.danger-on{color:var(--warn); background:var(--l1-tint); border-color:var(--warn);
+    box-shadow:0 0 10px var(--glow)}
+
+  /* ── 设置面板（预设 / 模型 / 跳过爬取） ── */
+  .settings-overlay{position:absolute;inset:0;background:rgba(2,6,20,.68);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:25;padding:22px}
+  .settings-overlay.show{display:flex}
+  [data-form="light"] .settings-overlay{background:rgba(90,40,60,.30)}
+  .settings-card{width:100%;max-width:450px;max-height:88vh;overflow:auto;
+    background:linear-gradient(180deg,var(--bg-2),var(--bg-1));
+    border:1px solid var(--accent);border-radius:20px;padding:22px;
+    box-shadow:0 16px 54px var(--glow);animation:rise .25s ease}
+  .settings-card h3{font-size:15px;font-weight:600;margin-bottom:4px}
+  .settings-card .muted{font-size:11.5px;color:var(--text-faint);margin-bottom:14px;line-height:1.6}
+  .preset-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .preset-item{display:flex;align-items:center;gap:9px;padding:10px 12px;
+    background:var(--bg-2);border:1px solid var(--edge);border-radius:12px}
+  .preset-item.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+  .preset-item .pi-main{flex:1;min-width:0}
+  .preset-item .pi-name{font-size:13.5px;font-weight:600}
+  .preset-item .pi-sub{font-size:11px;color:var(--text-faint);white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;margin-top:2px}
+  .preset-item .pi-btn{flex:0 0 auto;border:none;border-radius:8px;cursor:pointer;font-family:inherit;
+    font-size:12px;padding:6px 10px;transition:filter .15s}
+  .pi-sel{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-deep))}
+  .pi-edit{color:var(--text-dim);background:var(--bg-1);border:1px solid var(--edge)}
+  .pi-del{color:var(--warn);background:transparent;font-size:14px;padding:6px 7px}
+  .preset-item .pi-btn:hover{filter:brightness(1.2)}
+  .empty-hint{font-size:12.5px;color:var(--text-faint);text-align:center;padding:14px;font-style:italic}
+  .preset-form{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--edge)}
+  .preset-form .fh{font-size:12px;color:var(--text-dim);margin-bottom:2px}
+  .preset-form input{background:var(--bg-0);border:1px solid var(--edge);border-radius:9px;
+    color:var(--text);font-family:inherit;font-size:13px;padding:9px 11px;outline:none;width:100%}
+  .preset-form input:focus{border-color:var(--accent)}
+  .form-btns{display:flex;gap:8px;margin-top:4px}
+  .form-btns button{flex:1;height:38px;border:none;border-radius:10px;cursor:pointer;
+    font-family:inherit;font-size:13.5px;font-weight:600;transition:filter .15s}
+  .btn-save{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-deep))}
+  .btn-cancel{color:var(--text-dim);background:var(--bg-2);border:1px solid var(--edge)}
+  .form-btns button:hover{filter:brightness(1.15)}
+  .skip-row{display:flex;align-items:center;gap:10px;margin:15px 0 2px;padding:11px 13px;
+    background:var(--l1-tint);border-radius:11px;cursor:pointer;user-select:none}
+  .skip-row input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+  .skip-row .sk-t{font-size:13px}
+  .skip-row .sk-s{font-size:11px;color:var(--text-faint);margin-top:1px}
+  .close-row{display:flex;justify-content:flex-end;margin-top:14px}
+  .close-row button{height:36px;padding:0 18px;border-radius:10px;cursor:pointer;
+    font-family:inherit;font-size:13px;color:var(--text-dim);background:var(--bg-2);
+    border:1px solid var(--edge)}
+  .close-row button:hover{filter:brightness(1.15)}
+  /* ── 存档浮层 ── */
+  .cp-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;max-height:46vh;overflow:auto}
+  .cp-item{display:flex;align-items:center;gap:9px;padding:10px 12px;
+    background:var(--bg-2);border:1px solid var(--edge);border-radius:12px}
+  .cp-item.auto{border-style:dashed;border-color:var(--accent)}
+  .cp-item.gone{opacity:.5}
+  .cp-main{flex:1;min-width:0}
+  .cp-hint{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cp-sub{font-size:11px;color:var(--text-faint);white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;margin-top:2px}
+  .cp-btn{flex:0 0 auto;border:none;border-radius:8px;cursor:pointer;font-family:inherit;
+    font-size:12px;padding:6px 10px;transition:filter .15s}
+  .cp-btn:hover{filter:brightness(1.2)}
+  .cp-resume{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-deep))}
+  .cp-resume:disabled{opacity:.4;cursor:not-allowed;filter:none}
+  .cp-del{color:var(--warn);background:transparent;font-size:14px;padding:6px 7px}
+</style>
+</head>
+<body>
+
+<!-- 背景泡泡 + 星芒 -->
+<div class="bubbles" id="bubbles"></div>
+<!-- 隐藏的头像上传输入 -->
+<input type="file" id="avatarFile" accept="image/*" style="display:none">
+
+<div class="shell">
+
+  <!-- ── 左侧侧边栏：形态切换 / Bypass / 设置 ── -->
+  <nav class="sidebar">
+    <div class="sb-logo" title="达妮娅"></div>
+    <button class="sb-btn" id="sbTheme" data-tip="切换形态">☾</button>
+    <button class="sb-btn" id="sbBypass" data-tip="Bypass 模式（免确认，慎用）">⚡</button>
+    <button class="sb-btn" id="sbArchive" data-tip="归档 · 整理记忆与看法">🗄</button>
+    <button class="sb-btn" id="sbSave" data-tip="存档 · 保存进度 / 从存档续接">💾</button>
+    <button class="sb-btn" id="sbExport" data-tip="导出对话记录（Markdown）">📄</button>
+    <button class="sb-btn" id="sbCompact" data-tip="压缩上下文 · 省 token（有损）">🗜</button>
+    <div class="sb-spacer"></div>
+    <button class="sb-btn" id="gear2" data-tip="模型与环境设置">⚙</button>
+  </nav>
+
+  <div class="app">
+    <header>
+      <div class="avatar"></div>
+      <div class="who">
+        <div class="name">达妮娅 <span class="badge" id="formBadge">黑色形态</span></div>
+        <div class="sub">阿列夫一 · 虚质空间信号</div>
+      </div>
+      <div class="hd-actions">
+        <div class="status"><span class="dot off" id="dot"></span><span id="statusText">连接中…</span></div>
+        <button class="icon-btn" id="themeBtn" title="切换形态">☾</button>
+        <button class="icon-btn" id="gear" title="模型与环境设置">⚙</button>
+      </div>
+    </header>
+
+    <div class="stream" id="stream"></div>
+
+    <div class="composer-wrap">
+      <div class="img-strip" id="imgStrip"></div>
+      <div class="composer">
+        <button class="plus" id="plusBtn" title="发送图片（也可拖拽 / 粘贴）">＋</button>
+        <textarea id="input" placeholder="对达妮娅说些什么…（Enter 发送，Shift+Enter 换行，回应时 Esc 收回）"></textarea>
+        <button class="send" id="send" disabled>发送</button>
+      </div>
+    </div>
+    <!-- 隐藏的图片上传输入 -->
+    <input type="file" id="imgFile" accept="image/*" multiple style="display:none">
+
+    <!-- 权限弹窗 -->
+    <div class="perm-overlay" id="permOverlay">
+      <div class="perm-card">
+        <div class="top"><div class="avatar"></div><div class="t">达妮娅想做一件事</div></div>
+        <div class="desc" id="permDesc"></div>
+        <div class="detail" id="permDetail"></div>
+        <div class="btns">
+          <button class="deny" id="permDeny">这次不用</button>
+          <button class="allow" id="permAllow">好，去吧</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- bypass 风险提示框 -->
+    <div class="perm-overlay" id="bypassOverlay">
+      <div class="perm-card">
+        <div class="top"><div class="avatar"></div><div class="t">开启 Bypass 模式？</div></div>
+        <div class="desc">开启后，达妮娅的<strong>所有操作都不再逐条询问</strong>——执行命令、修改文件、联网、派帮手都会直接放行。<br>「弹窗确认」这道保险会完全关掉。只在你看着她干活、信任当前任务时开启。</div>
+        <div class="detail">会话级开关 · 随时可再点 ⚡ 关闭（无需确认）· 断线重连后自动恢复关闭</div>
+        <div class="btns">
+          <button class="deny" id="bypassCancel">再想想</button>
+          <button class="allow danger" id="bypassConfirm">我明白风险，开启</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 存档浮层：保存进度 / 从存档续接 -->
+    <div class="settings-overlay" id="cpOverlay">
+      <div class="settings-card">
+        <h3>💾 存档 · 进度保存</h3>
+        <div class="muted">对话内容一直存在本机，存档只是记住"从哪接着聊"。程序崩溃或断线后，从这里一键续接，达妮娅的上下文完整。（续接后聊天区不重放历史，但她记得。）</div>
+        <div class="cp-list" id="cpList"></div>
+        <button class="btn-save" id="cpSaveBtn" style="width:100%;height:38px;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600">为当前对话存档</button>
+        <div class="close-row"><button id="cpClose">关闭</button></div>
+      </div>
+    </div>
+
+    <!-- 压缩上下文确认框 -->
+    <div class="perm-overlay" id="compactOverlay">
+      <div class="perm-card">
+        <div class="top"><div class="avatar"></div><div class="t">压缩上下文？</div></div>
+        <div class="desc">把目前的对话<strong>概括成摘要</strong>后继续，能显著省 token、缓解卡顿。<br>代价：达妮娅对早前细节的记忆会变成"摘要级"，是<strong>有损</strong>的。适合上下文快满、明显变慢时用。</div>
+        <div class="detail">压缩后对话不中断，仍可继续聊 · 存档/续接照常</div>
+        <div class="btns">
+          <button class="deny" id="compactCancel">再想想</button>
+          <button class="allow" id="compactConfirm">压缩</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置面板：模型预设 + 跳过爬取 -->
+    <div class="settings-overlay" id="settingsOverlay">
+      <div class="settings-card">
+        <h3>模型与环境</h3>
+        <div class="muted">每个预设 = 中转站地址 + 密钥 + 模型。选一个才会开始连接达妮娅（空置时不初始化、不爬取，省 token）。密钥只存本地，不入库。</div>
+        <div class="preset-list" id="presetList"></div>
+        <div class="preset-form" id="presetForm">
+          <div class="fh" id="formTitle">＋ 新增预设</div>
+          <input id="fName" placeholder="名字（如：中转站-Opus）" autocomplete="off">
+          <input id="fBase" placeholder="ANTHROPIC_BASE_URL（如 https://api.xxx.com）" autocomplete="off">
+          <input id="fToken" placeholder="ANTHROPIC_AUTH_TOKEN（编辑时留空=不改）" autocomplete="off">
+          <input id="fModel" placeholder="模型 ID（留空=用该 provider 默认）" autocomplete="off">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);cursor:pointer;user-select:none">
+            <input type="checkbox" id="fVision" checked style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
+            该模型支持识图（聊天里显示图片上传 ＋）
+          </label>
+          <div class="form-btns">
+            <button class="btn-cancel" id="fCancel" style="display:none">取消编辑</button>
+            <button class="btn-save" id="fSave">保存预设</button>
+          </div>
+        </div>
+        <!-- 识图转接：主模型不支持识图时，由独立识图模型"代看"图片 -->
+        <div class="preset-form" style="margin-top:14px">
+          <div class="fh">👁 识图转接（给不支持识图的模型"代看"图片）</div>
+          <div class="muted" style="margin-bottom:6px">主模型不支持识图时，图片先交给这里配置的识图模型，生成的描述文字转给达妮娅。填 OpenAI 兼容接口（GLM / Qwen-VL 等）。</div>
+          <input id="vrBase" placeholder="接口地址（如 https://open.bigmodel.cn/api/paas/v4）" autocomplete="off">
+          <input id="vrToken" placeholder="API Key（编辑时留空=不改）" autocomplete="off">
+          <input id="vrModel" placeholder="识图模型 ID（如 glm-4v-flash）" autocomplete="off">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-dim);cursor:pointer;user-select:none">
+            <input type="checkbox" id="vrEnabled" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer">
+            启用识图转接
+          </label>
+          <div class="form-btns">
+            <button class="btn-save" id="vrSave">保存识图转接</button>
+          </div>
+        </div>
+        <label class="skip-row">
+          <input type="checkbox" id="skipCrawl">
+          <div><div class="sk-t">跳过想法池爬取</div>
+          <div class="sk-s">开会话时不联网抓取想法种子，达妮娅直接打招呼，最省 token</div></div>
+        </label>
+        <div class="close-row"><button id="settingsClose">关闭</button></div>
+      </div>
+    </div>
+  </div><!-- /.app -->
+</div><!-- /.shell -->
+
+<script>
+const stream = document.getElementById('stream');
+const input  = document.getElementById('input');
+const sendBtn= document.getElementById('send');
+const dot    = document.getElementById('dot');
+const statusText = document.getElementById('statusText');
+const permOverlay = document.getElementById('permOverlay');
+const permDesc = document.getElementById('permDesc');
+const permDetail = document.getElementById('permDetail');
+const settingsOverlay = document.getElementById('settingsOverlay');
+const presetList = document.getElementById('presetList');
+const skipCrawlBox = document.getElementById('skipCrawl');
+const root = document.documentElement;
+
+// 达妮娅头像（后端 /avatar.png 静态路由）
+root.style.setProperty('--avatar-img', "url('/avatar.png')");
+
+const WS_URL = `ws://${location.hostname}:8766/ws`;
+let ws = null, connected = false, busy = false;
+let curReqId = null;
+let chatReady = false;         // 是否已选预设、后端已建 client
+let presets = [], selectedId = null, editingId = null;
+
+function scrollDown(){ stream.scrollTop = stream.scrollHeight; }
+function setStatus(kind){
+  dot.className = 'dot' + (kind==='busy'?' busy':kind==='off'?' off':'');
+  statusText.textContent = kind==='busy'?'达妮娅正在回应…':kind==='off'?'连接中断':'连接稳定';
+}
+
+// ── 形态切换（白/黑 = Light/Dark） ──
+const themeBtn = document.getElementById('themeBtn');
+const sbTheme  = document.getElementById('sbTheme');
+const formBadge = document.getElementById('formBadge');
+function applyForm(form){
+  root.setAttribute('data-form', form);
+  const icon = form==='dark' ? '☾' : '☀';
+  themeBtn.textContent = icon; sbTheme.textContent = icon;
+  formBadge.textContent = form==='dark' ? '黑色形态' : '白色形态';
+  localStorage.setItem('dania_form', form);
+}
+applyForm(localStorage.getItem('dania_form') || 'dark');
+const toggleForm = ()=> applyForm(root.getAttribute('data-form')==='dark' ? 'light' : 'dark');
+themeBtn.onclick = toggleForm;
+sbTheme.onclick  = toggleForm;
+
+// ── 用户头像自定义（点「你」头像 → 选图 → localStorage 记住） ──
+const avatarFile = document.getElementById('avatarFile');
+function applyUserAvatar(dataUrl){
+  document.querySelectorAll('.mini.me').forEach(el=>{
+    if(dataUrl){ el.style.backgroundImage = `url('${dataUrl}')`; el.classList.add('has-img'); }
+    else{ el.style.backgroundImage = ''; el.classList.remove('has-img'); }
+  });
+}
+function currentUserAvatar(){ return localStorage.getItem('dania_user_avatar'); }
+avatarFile.onchange = ()=>{
+  const f = avatarFile.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ localStorage.setItem('dania_user_avatar', reader.result); applyUserAvatar(reader.result); };
+  reader.readAsDataURL(f);
+  avatarFile.value = '';
+};
+// 事件委托：动态生成的用户气泡头像也可点击换图
+stream.addEventListener('click', e=>{
+  if(e.target.classList && e.target.classList.contains('me')) avatarFile.click();
+});
+
+function addUser(text, imgs){
+  const row = document.createElement('div'); row.className='row me';
+  row.innerHTML = `<div class="mini me"></div><div class="bubble-wrap"></div>`;
+  const wrap = row.querySelector('.bubble-wrap');
+  (imgs||[]).forEach(im=>{
+    const b = document.createElement('div'); b.className='bubble img-only';
+    const i = document.createElement('img'); i.className='att'; i.src=im.url; i.alt=im.name||'图片';
+    b.appendChild(i); wrap.appendChild(b);
+  });
+  if(text){ const b=document.createElement('div'); b.className='bubble'; b.textContent=text; wrap.appendChild(b); }
+  const av = currentUserAvatar();
+  const mini = row.querySelector('.mini.me');
+  if(av){ mini.style.backgroundImage = `url('${av}')`; mini.classList.add('has-img'); }
+  else{ mini.textContent = '你'; }
+  stream.appendChild(row); scrollDown();
+  return row;
+}
+// ── 图片上传：＋按钮 / 拖拽 / 粘贴 → POST /upload → 待发预览条 ──
+// 图片不落 WS：HTTP 上传落盘 uploads 缓存，发送时只带路径，模型用 Read 查看。
+const plusBtn = document.getElementById('plusBtn');
+const imgFile = document.getElementById('imgFile');
+const imgStrip = document.getElementById('imgStrip');
+let visionOn = false;     // 当前预设是否支持识图（chat_enabled 告知）
+let relayOn = false;      // 识图转接是否可用（配置完整且启用；chat_enabled 告知）
+let pendingImgs = [];     // 待发图片 [{name, path, url}]
+
+function refreshImgStrip(){
+  imgStrip.innerHTML='';
+  imgStrip.classList.toggle('show', pendingImgs.length>0);
+  pendingImgs.forEach((im, idx)=>{
+    const chip = document.createElement('div'); chip.className='img-chip';
+    chip.innerHTML = '<img alt=""><span class="x">✕</span>';
+    chip.querySelector('img').src = im.url;
+    chip.querySelector('.x').onclick = ()=>{ pendingImgs.splice(idx,1); refreshImgStrip(); };
+    imgStrip.appendChild(chip);
+  });
+}
+async function uploadImage(blob, name){
+  if(!visionOn && !relayOn){ addSys('当前模型不支持识图，且未配置识图转接（⚙ 里可配置）'); return; }
+  if(pendingImgs.length>=4){ addSys('一条消息最多带 4 张图哦'); return; }
+  if(blob.size > 15*1024*1024){ addSys('图片太大啦（超过 15MB）'); return; }
+  try{
+    const resp = await fetch('/upload', {method:'POST',
+      headers:{'X-Filename': encodeURIComponent(name||'img.png')}, body:blob});
+    if(!resp.ok){ addSys('图片上传失败（'+resp.status+'）'); return; }
+    pendingImgs.push(await resp.json()); refreshImgStrip();
+  }catch(e){ addSys('图片上传失败：'+e.message); }
+}
+plusBtn.onclick = ()=> imgFile.click();
+imgFile.onchange = ()=>{ [...imgFile.files].forEach(f=>uploadImage(f, f.name)); imgFile.value=''; };
+input.addEventListener('paste', e=>{
+  const items=[...(e.clipboardData?.items||[])].filter(it=>it.type.startsWith('image/'));
+  if(!items.length) return;
+  e.preventDefault();
+  items.forEach(it=>{ const f=it.getAsFile(); if(f) uploadImage(f, 'paste-'+Date.now()+'.png'); });
+});
+document.addEventListener('dragover', e=>{
+  if(e.dataTransfer?.types?.includes('Files')) e.preventDefault();  // 不拦会变成浏览器打开图片
+});
+document.addEventListener('drop', e=>{
+  const fs=[...(e.dataTransfer?.files||[])].filter(f=>f.type.startsWith('image/'));
+  if(!fs.length) return;
+  e.preventDefault();
+  fs.forEach(f=>uploadImage(f, f.name));
+});
+
+function addSys(text){
+  const s = document.createElement('div'); s.className='sys'; s.textContent=text;
+  stream.appendChild(s); scrollDown();
+}
+// "达妮娅正在回应…" 占位
+let waitingEl = null;
+function showWaiting(){
+  removeWaiting();
+  waitingEl = document.createElement('div'); waitingEl.className='hint';
+  waitingEl.textContent = '达妮娅正在回应…';
+  stream.appendChild(waitingEl); scrollDown();
+}
+function removeWaiting(){ if(waitingEl){ waitingEl.remove(); waitingEl=null; } }
+
+// ── 多气泡流式渲染：按 seg 索引，达妮娅可连发多条各占独立气泡 ──
+const segs = {};
+let lastSeg = 0;
+function beginSeg(id){
+  segs[id] = { raw:'', l1El:null, l1Body:null, l2El:null };
+  lastSeg = id;
+  return segs[id];
+}
+function ensureL1(s){
+  if(s.l1El) return;
+  const l1 = document.createElement('div'); l1.className='l1';
+  l1.innerHTML = `<button class="toggle"><span class="arrow">▶</span><span>达妮娅在想…</span></button><div class="body"></div>`;
+  l1.querySelector('.toggle').onclick = ()=> l1.classList.toggle('open');
+  s.l1El = l1; s.l1Body = l1.querySelector('.body');
+  stream.appendChild(l1); scrollDown();
+}
+function ensureL2(s){
+  if(s.l2El) return;
+  const row = document.createElement('div'); row.className='row dania';
+  row.innerHTML = `<div class="mini dania"></div><div class="bubble-wrap"><div class="bubble"></div></div>`;
+  s.l2El = row.querySelector('.bubble');
+  stream.appendChild(row); scrollDown();
+}
+// ── 表情包内嵌渲染：[表情:文件名] → <img>（只处理 L2 文本）──
+// 流式中残缺的标记（如 "[表情:开"）不匹配正则，先按原文显示；
+// "]" 到达后的下一次 renderSeg 自然变成图片——不需要增量解析状态机。
+// 兼容全角标点：中文语境下模型常把 : 写成 ：、[] 写成 【】。
+const STICKER_RE = /[\[【]表情[:：]([\w一-鿿.\-]+)[\]】]/g;
+function appendRichText(el, text){
+  let last = 0;
+  for(const m of text.matchAll(STICKER_RE)){
+    if(m.index > last) el.append(document.createTextNode(text.slice(last, m.index)));
+    const img = document.createElement('img');
+    img.className = 'sticker';
+    img.src = '/stickers/' + encodeURIComponent(m[1]);
+    img.alt = m[0];
+    // 索引外/不存在的文件名（模型编造）→ 图片加载失败时退回原始标记文本
+    img.onerror = ()=> img.replaceWith(document.createTextNode(m[0]));
+    el.appendChild(img);
+    last = m.index + m[0].length;
+  }
+  if(last < text.length) el.append(document.createTextNode(text.slice(last)));
+}
+
+function renderSeg(s){
+  const raw = s.raw;
+  let l1='', l2='';
+  if(raw.includes('[L2]')){
+    const [head, tail] = raw.split('[L2]');
+    l2 = tail;
+    if(head.includes('[L1]')) l1 = head.split('[L1]')[1];
+  } else if(raw.includes('[L1]')){
+    l1 = raw.split('[L1]')[1];
+  }
+  if(l1.trim()){ ensureL1(s); s.l1Body.textContent = l1.trim(); }
+  if(l2.trim()){ ensureL2(s); s.l2El.innerHTML=''; appendRichText(s.l2El, l2.trim());
+    const c=document.createElement('span'); c.className='caret'; s.l2El.appendChild(c); }
+  scrollDown();
+}
+function endSeg(id){
+  const s = segs[id]; if(!s) return;
+  if(s.l2El){ const c = s.l2El.querySelector('.caret'); if(c) c.remove(); }
+  if(!s.l2El && s.raw.trim()){
+    ensureL2(s);
+    appendRichText(s.l2El, s.raw.replace('[L1]','').replace('[L2]','').trim());
+  }
+}
+
+// ── 设置面板：预设 CRUD + 选择 + 跳过爬取 ──
+function openSettings(){ settingsOverlay.classList.add('show'); }
+function closeSettings(){ settingsOverlay.classList.remove('show'); }
+const $ = id => document.getElementById(id);
+
+function renderPresets(){
+  presetList.innerHTML='';
+  if(!presets.length){
+    const e=document.createElement('div'); e.className='empty-hint';
+    e.textContent='还没有预设 · 在下面填一条开始'; presetList.appendChild(e); return;
+  }
+  presets.forEach(p=>{
+    const sel = p.id===selectedId;
+    const item=document.createElement('div'); item.className='preset-item'+(sel?' sel':'');
+    const sub=[p.model||'默认模型', p.base_url||'默认地址', p.has_token?'🔑':'⚠无密钥', p.vision!==false?'🖼':'🚫🖼'].join(' · ');
+    item.innerHTML=`<div class="pi-main"><div class="pi-name"></div><div class="pi-sub"></div></div>
+      <button class="pi-btn pi-sel"></button>
+      <button class="pi-btn pi-edit">编辑</button>
+      <button class="pi-btn pi-del" title="删除">✕</button>`;
+    item.querySelector('.pi-name').textContent=p.name||'未命名';
+    item.querySelector('.pi-sub').textContent=sub;
+    const selBtn=item.querySelector('.pi-sel');
+    selBtn.textContent = sel&&chatReady ? '使用中' : '选择';
+    selBtn.onclick=()=> ws.send(JSON.stringify({type:'select_preset', id:p.id}));
+    item.querySelector('.pi-edit').onclick=()=>startEdit(p);
+    item.querySelector('.pi-del').onclick=()=>{
+      if(confirm('删除预设「'+(p.name||'未命名')+'」？')) ws.send(JSON.stringify({type:'delete_preset', id:p.id}));
+    };
+    presetList.appendChild(item);
+  });
+}
+function resetForm(){
+  editingId=null; $('formTitle').textContent='＋ 新增预设';
+  $('fName').value=''; $('fBase').value=''; $('fToken').value=''; $('fModel').value='';
+  $('fToken').placeholder='ANTHROPIC_AUTH_TOKEN';
+  $('fVision').checked=true;
+  $('fCancel').style.display='none';
+}
+function startEdit(p){
+  editingId=p.id; $('formTitle').textContent='✎ 编辑：'+(p.name||'未命名');
+  $('fName').value=p.name||''; $('fBase').value=p.base_url||'';
+  $('fToken').value=''; $('fToken').placeholder='留空=保留原密钥';
+  $('fModel').value=p.model||''; $('fVision').checked=(p.vision!==false);
+  $('fCancel').style.display='';
+  openSettings();
+}
+function savePreset(){
+  const preset={ name:$('fName').value.trim(), base_url:$('fBase').value.trim(),
+    token:$('fToken').value.trim(), model:$('fModel').value.trim(), vision:$('fVision').checked };
+  if(editingId) preset.id=editingId;
+  if(!preset.name){ alert('给这个预设起个名字吧'); return; }
+  ws.send(JSON.stringify({type:'save_preset', preset}));
+  resetForm();
+}
+$('fSave').onclick=savePreset;
+$('fCancel').onclick=resetForm;
+$('settingsClose').onclick=closeSettings;
+// ── 识图转接配置（👁）──
+let vrHasToken = false;
+function fillVisionRelay(cfg){
+  vrHasToken = !!(cfg && cfg.has_token);
+  $('vrBase').value = (cfg && cfg.base_url) || '';
+  $('vrModel').value = (cfg && cfg.model) || '';
+  $('vrToken').value = '';
+  $('vrToken').placeholder = vrHasToken ? '留空=保留原密钥' : 'API Key';
+  $('vrEnabled').checked = !!(cfg && cfg.enabled);
+}
+$('vrSave').onclick = ()=>{
+  const cfg = { enabled:$('vrEnabled').checked, base_url:$('vrBase').value.trim(),
+    token:$('vrToken').value.trim(), model:$('vrModel').value.trim() };
+  if(cfg.enabled && (!cfg.base_url || !cfg.model || (!cfg.token && !vrHasToken))){
+    alert('启用识图转接需要填全：接口地址、API Key、模型 ID'); return;
+  }
+  ws.send(JSON.stringify({type:'save_vision_relay', cfg}));
+};
+function openGear(){ ws && (ws.send(JSON.stringify({type:'list_presets'})),
+  ws.send(JSON.stringify({type:'get_vision_relay'}))); openSettings(); }
+document.getElementById('gear').onclick=openGear;
+document.getElementById('gear2').onclick=openGear;
+skipCrawlBox.onchange=()=> ws.send(JSON.stringify({type:'set_skip_crawl', on:skipCrawlBox.checked}));
+
+// ── Bypass 模式（免确认 · 会话级 · 隔离守卫仍硬拦） ──
+const bypassOverlay = document.getElementById('bypassOverlay');
+const sbBypass = document.getElementById('sbBypass');
+let bypassOn = false;
+function applyBypass(on){ bypassOn = on; sbBypass.classList.toggle('danger-on', on); }
+sbBypass.onclick = ()=>{
+  if(bypassOn){ ws && ws.send(JSON.stringify({type:'set_bypass', on:false})); }  // 关闭无需确认
+  else{ bypassOverlay.classList.add('show'); }                                    // 开启先弹风险框
+};
+document.getElementById('bypassCancel').onclick = ()=> bypassOverlay.classList.remove('show');
+document.getElementById('bypassConfirm').onclick = ()=>{
+  bypassOverlay.classList.remove('show');
+  ws && ws.send(JSON.stringify({type:'set_bypass', on:true}));
+};
+
+// ── 归档：触发 Skill 的 [L0更新记忆] 硬编码命令（跳过 L1/L2 直接执行写入协议） ──
+// 走正常 chat 通道：不占用户气泡、可被 ESC 打断；写入过程中文件操作走白名单静默，
+// 第 6 步看法更新 Agent 非白名单 → 仍会弹窗（除非 bypass）。
+document.getElementById('sbArchive').onclick = ()=>{
+  if(!connected) return;
+  if(!chatReady){ addSys('还没选模型呢 · 点 ⚙ 选一个预设再归档'); openSettings(); return; }
+  if(busy){ addSys('达妮娅还在回应，等她忙完再归档～'); return; }
+  busy=true; sendBtn.disabled=true; setStatus('busy');
+  addSys('🗄 已请求达妮娅整理本次记忆与看法…（写入文件不会逐条打扰你）');
+  showWaiting();
+  ws.send(JSON.stringify({type:'chat', text:'[L0更新记忆]'}));
+};
+
+// ── 存档 / 从存档续接（💾） ──
+const cpOverlay = document.getElementById('cpOverlay');
+const cpList = document.getElementById('cpList');
+function openCheckpoints(){
+  if(!connected){ return; }
+  ws.send(JSON.stringify({type:'list_checkpoints'}));
+  cpOverlay.classList.add('show');
+}
+function closeCheckpoints(){ cpOverlay.classList.remove('show'); }
+function renderCheckpoints(list, last){
+  cpList.innerHTML='';
+  const rows = [];
+  if(last && last.session_id) rows.push({...last, _auto:true});
+  (list||[]).forEach(c=> rows.push(c));
+  if(!rows.length){
+    const e=document.createElement('div'); e.className='empty-hint';
+    e.textContent='还没有存档 · 聊几句后点下面「为当前对话存档」'; cpList.appendChild(e); return;
+  }
+  rows.forEach(c=>{
+    const item=document.createElement('div');
+    item.className='cp-item'+(c._auto?' auto':'')+(c.exists?'':' gone');
+    const sub=[c.created_at||'', c.preset_name||'未知模型', c.exists?'':'记录已丢失'].filter(Boolean).join(' · ');
+    item.innerHTML=`<div class="cp-main"><div class="cp-hint"></div><div class="cp-sub"></div></div>
+      <button class="cp-btn cp-resume">续接</button>
+      <button class="cp-btn cp-del" title="删除">✕</button>`;
+    item.querySelector('.cp-hint').textContent = c.hint || '（无备注）';
+    item.querySelector('.cp-sub').textContent = sub;
+    const rb=item.querySelector('.cp-resume');
+    rb.disabled = !c.exists || busy;
+    rb.onclick=()=> ws.send(JSON.stringify({type:'resume_checkpoint', id:(c._auto?'last':c.id)}));
+    const db=item.querySelector('.cp-del');
+    if(c._auto){ db.style.visibility='hidden'; }   // 自动项不给删（下轮自动刷新）
+    else db.onclick=()=>{ if(confirm('删除这条存档？')) ws.send(JSON.stringify({type:'delete_checkpoint', id:c.id})); };
+    cpList.appendChild(item);
+  });
+}
+document.getElementById('sbSave').onclick = ()=>{
+  if(!connected) return;
+  if(!chatReady){ addSys('还没选模型呢 · 点 ⚙ 选一个预设'); openSettings(); return; }
+  openCheckpoints();
+};
+document.getElementById('cpClose').onclick = closeCheckpoints;
+document.getElementById('cpSaveBtn').onclick = ()=>{
+  if(busy){ addSys('达妮娅还在回应，等她说完再存档～'); return; }
+  ws.send(JSON.stringify({type:'save_checkpoint'}));
+};
+
+// ── 导出对话记录（📄） ──
+document.getElementById('sbExport').onclick = ()=>{
+  if(!connected) return;
+  if(!chatReady){ addSys('还没选模型呢 · 点 ⚙ 选一个预设'); openSettings(); return; }
+  addSys('📄 正在导出对话记录…');
+  ws.send(JSON.stringify({type:'export_transcript'}));
+};
+
+// ── 压缩上下文（🗜） ──
+const compactOverlay = document.getElementById('compactOverlay');
+document.getElementById('sbCompact').onclick = ()=>{
+  if(!connected) return;
+  if(!chatReady){ addSys('还没选模型呢 · 点 ⚙ 选一个预设'); openSettings(); return; }
+  if(busy){ addSys('达妮娅还在回应，等她忙完再压缩～'); return; }
+  compactOverlay.classList.add('show');
+};
+document.getElementById('compactCancel').onclick = ()=> compactOverlay.classList.remove('show');
+document.getElementById('compactConfirm').onclick = ()=>{
+  compactOverlay.classList.remove('show');
+  if(busy) return;
+  busy=true; sendBtn.disabled=true; setStatus('busy');
+  addSys('🗜 正在压缩上下文…（把之前的对话概括成摘要，完成后可继续聊）');
+  showWaiting();
+  ws.send(JSON.stringify({type:'chat', text:'/compact'}));
+};
+
+// ── 权限弹窗 ──
+function showPermission(msg){
+  curReqId = msg.req_id;
+  permDesc.textContent = msg.desc || '达妮娅想使用一个工具';
+  permDetail.textContent = msg.detail || '';
+  permOverlay.classList.add('show');
+}
+function answerPermission(allow){
+  if(!curReqId) return;
+  ws.send(JSON.stringify({type:'permission_response', req_id:curReqId, allow}));
+  permOverlay.classList.remove('show');
+  curReqId = null;
+}
+document.getElementById('permAllow').onclick = ()=>answerPermission(true);
+document.getElementById('permDeny').onclick  = ()=>answerPermission(false);
+
+// ── WebSocket ──
+function connect(){
+  ws = new WebSocket(WS_URL);
+  ws.onopen = ()=>{ connected=true; };
+  ws.onclose = ()=>{ connected=false; chatReady=false; applyBypass(false); setStatus('off'); sendBtn.disabled=true;
+    setTimeout(connect, 1500); };
+  ws.onerror = ()=>{};
+  ws.onmessage = (e)=>{
+    const msg = JSON.parse(e.data);
+    switch(msg.type){
+      case 'connected':
+        setStatus('idle'); statusText.textContent='请选择模型预设';
+        sendBtn.disabled=true; chatReady=false;
+        break;
+      case 'presets':
+        presets = msg.list || []; selectedId = msg.selected || null;
+        skipCrawlBox.checked = !!msg.skip_crawl;
+        renderPresets();
+        if(!chatReady){ openSettings(); if(presets.length===0) resetForm(); }
+        break;
+      case 'chat_enabled':
+        chatReady=true; closeSettings();
+        visionOn = msg.vision !== false;
+        relayOn = !!msg.relay;
+        plusBtn.style.display = (visionOn||relayOn) ? 'flex' : 'none';  // ⚠ 不能赋 ''——会回落到样式表的 display:none
+        plusBtn.title = visionOn ? '发送图片（也可拖拽 / 粘贴）'
+                                 : '发送图片（识图转接：由识图助手代看）';
+        setStatus('idle'); sendBtn.disabled=false; input.focus();
+        addSys('虚质空间连接已建立 · 当前模型：'+(msg.preset||'?')+' · 向达妮娅发出第一句话');
+        break;
+      case 'preset_deferred':
+        addSys('已切换到「'+(msg.preset||'?')+'」，下次开始新对话时生效（当前对话不中断）');
+        break;
+      case 'preset_error':
+        addSys('模型切换出了点问题'+(msg.name?('（'+msg.name+'）'):'')+'：'+(msg.msg||''));
+        openSettings();
+        break;
+      case 'need_preset':
+        addSys('还没选模型呢 · 点右上角 ⚙ 选一个预设');
+        openSettings();
+        break;
+      case 'skip_crawl_set':
+        skipCrawlBox.checked = !!msg.on;
+        break;
+      case 'vision_relay':
+        fillVisionRelay(msg.cfg);
+        relayOn = !!(msg.cfg && msg.cfg.enabled && msg.cfg.base_url && msg.cfg.model && msg.cfg.has_token);
+        if(chatReady) plusBtn.style.display = (visionOn||relayOn) ? 'flex' : 'none';
+        if(msg.saved) addSys('👁 识图转接配置已保存' + (relayOn ? ' · 已启用' : ''));
+        break;
+      case 'vision_relay_start':
+        addSys('👁 识图助手正在代看图片（'+(msg.n||1)+' 张）…'); break;
+      case 'vision_relay_done':
+        break;
+      case 'vision_relay_error':
+        addSys('👁 识图转接失败：'+(msg.msg||'')+' · 达妮娅将看不到这张图'); break;
+      case 'vision_ask':
+        { const h=document.createElement('div'); h.className='hint';
+          h.textContent='👁 达妮娅在追问图片细节'+(msg.q?('：'+msg.q):'')+'…';
+          stream.appendChild(h); scrollDown(); }
+        break;
+      case 'bypass_set':
+        applyBypass(!!msg.on);
+        addSys(msg.on ? '⚡ Bypass 模式已开启：达妮娅的操作不再逐条询问'
+                      : 'Bypass 模式已关闭：操作恢复逐条确认');
+        break;
+      case 'checkpoints':
+        renderCheckpoints(msg.list, msg.last_session); break;
+      case 'checkpoint_saved':
+        addSys('💾 已存档 · 崩溃或断线后可从 💾 里续接');
+        renderCheckpoints(msg.list, null);
+        // 存完刷新一次拿最新自动项
+        ws.send(JSON.stringify({type:'list_checkpoints'}));
+        break;
+      case 'checkpoint_error':
+        addSys('存档：'+(msg.msg||'出了点问题')); break;
+      case 'resumed':
+        closeCheckpoints();
+        addSys('✅ 已从存档续接'+(msg.hint?('（'+msg.hint+'）'):'')+' · 历史不重新显示，但达妮娅的上下文完整，直接接着聊');
+        break;
+      case 'transcript_exported':
+        addSys('📄 对话记录已导出（'+(msg.count||0)+' 条）· 点此下载：'+(msg.name||''));
+        { const a=document.createElement('a'); a.href=msg.url; a.download=msg.name||'对话记录.md';
+          document.body.appendChild(a); a.click(); a.remove(); }
+        break;
+      case 'export_error':
+        addSys('导出：'+(msg.msg||'出了点问题')); break;
+      case 'busy':
+        addSys('达妮娅还在回应上一句，稍等喵～');
+        break;
+      case 'segment_start':
+        removeWaiting(); beginSeg(msg.seg); break;
+      case 'text_delta':
+        { removeWaiting();
+          const s = segs[msg.seg] || beginSeg(msg.seg);
+          s.raw += msg.text; renderSeg(s); }
+        break;
+      case 'segment_end':
+        endSeg(msg.seg); break;
+      case 'segment_final':
+        removeWaiting(); break;
+      case 'input_unlock':
+        removeWaiting(); curUserRow=null; curUserText=''; curUserImgs=[];
+        busy=false; sendBtn.disabled=false; setStatus('idle'); input.focus();
+        break;
+      case 'task_started': break;
+      case 'task_done': break;
+      case 'tool_use':
+        { const h=document.createElement('div'); h.className='hint';
+          h.textContent=msg.hint||('达妮娅在使用 '+msg.tool); stream.appendChild(h); scrollDown(); }
+        break;
+      case 'permission_request':
+        showPermission(msg); break;
+      case 'permission_timeout':
+        addSys('（等待太久，这次操作取消了）'); break;
+      case 'turn_reverted':
+        removeWaiting(); revertTurn(); break;
+      case 'isolation_block':
+        addSys('（隔离保护：拦下了一次越界访问）'); break;
+      case 'error':
+        removeWaiting(); addSys('出了点问题：'+msg.msg);
+        busy=false; sendBtn.disabled=false; setStatus('idle'); break;
+    }
+  };
+}
+
+// 当前回合的可撤回状态（供 ESC 回退）
+let curUserRow = null, curUserText = '', curUserImgs = [];
+
+function send(){
+  const text = input.value.trim();
+  if((!text && !pendingImgs.length) || busy || !connected) return;
+  if(!chatReady){ addSys('还没选模型呢 · 点右上角 ⚙ 选一个预设'); openSettings(); return; }
+  busy=true; sendBtn.disabled=true; setStatus('busy');
+  curUserRow = addUser(text, pendingImgs); curUserText = text; curUserImgs = pendingImgs.slice();
+  input.value=''; input.style.height='46px';
+  pendingImgs=[]; refreshImgStrip();
+  showWaiting();
+  ws.send(JSON.stringify({type:'chat', text, images: curUserImgs.map(p=>p.path)}));
+}
+
+function requestInterrupt(){
+  if(busy && connected){
+    ws.send(JSON.stringify({type:'interrupt'}));
+    setStatus('idle'); statusText.textContent = '正在收回…';
+  }
+}
+function revertTurn(){
+  removeWaiting();
+  if(curUserRow){
+    let n = curUserRow.nextElementSibling;
+    while(n){ const next=n.nextElementSibling; n.remove(); n=next; }
+    curUserRow.remove(); curUserRow=null;
+  }
+  for(const k in segs) delete segs[k];
+  if(curUserText){ input.value = curUserText; curUserText='';
+    input.style.height='46px'; input.style.height=Math.min(input.scrollHeight,130)+'px'; }
+  if(curUserImgs.length){ pendingImgs = curUserImgs; refreshImgStrip(); }
+  curUserImgs = [];
+  busy=false; sendBtn.disabled=false; setStatus('idle'); input.focus();
+}
+
+sendBtn.onclick = send;
+input.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(settingsOverlay.classList.contains('show')){ closeSettings(); }
+    else if(cpOverlay.classList.contains('show')){ closeCheckpoints(); }
+    else if(compactOverlay.classList.contains('show')){ compactOverlay.classList.remove('show'); }
+    else if(bypassOverlay.classList.contains('show')){ bypassOverlay.classList.remove('show'); }
+    else if(permOverlay.classList.contains('show')){ answerPermission(false); }
+    else if(busy){ e.preventDefault(); requestInterrupt(); }
+  }
+});
+input.addEventListener('input', ()=>{
+  input.style.height='46px';
+  input.style.height=Math.min(input.scrollHeight,130)+'px';
+});
+
+// ── 背景泡泡 + 星芒 ──
+const bubbles = document.getElementById('bubbles');
+const rand = (a,b)=> a + Math.random()*(b-a);
+for(let i=0;i<14;i++){
+  const b=document.createElement('div'); b.className='bub';
+  const size=rand(20,90);
+  b.style.width=b.style.height=size+'px';
+  b.style.left=rand(0,100)+'%';
+  b.style.animationDuration=rand(16,34)+'s';
+  b.style.animationDelay=(-rand(0,30))+'s';
+  bubbles.appendChild(b);
+}
+for(let i=0;i<22;i++){
+  const s=document.createElement('div'); s.className='spark'; s.textContent='✦';
+  s.style.left=rand(0,100)+'%'; s.style.top=rand(0,100)+'%';
+  s.style.fontSize=rand(7,15)+'px';
+  s.style.animationDuration=rand(2.5,6)+'s';
+  s.style.animationDelay=(-rand(0,5))+'s';
+  bubbles.appendChild(s);
+}
+
+connect();
+</script>
+</body>
+</html>
