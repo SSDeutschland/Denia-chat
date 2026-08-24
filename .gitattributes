@@ -1,2 +1,3 @@
 # bat 必须 CRLF——LF 化会让 goto/标签失效
 *.bat text eol=crlf
+*.sh text eol=lf
