@@ -2,13 +2,13 @@
   "autoMemoryEnabled": true,
   "permissions": {
     "allow": [
-      "Read(E:/Claude code项目/Denia-skill/project/看法/**)",
-      "Write(E:/Claude code项目/Denia-skill/project/记忆/**)",
-      "Write(E:/Claude code项目/Denia-skill/project/状态/**)",
-      "Write(E:/Claude code项目/Denia-skill/project/看法/**)",
-      "Edit(E:/Claude code项目/Denia-skill/project/记忆/**)",
-      "Edit(E:/Claude code项目/Denia-skill/project/状态/**)",
-      "Edit(E:/Claude code项目/Denia-skill/project/看法/**)"
+      "Read(__DENIA_ROOT__/denia/共享/看法/**)",
+      "Write(__DENIA_ROOT__/denia/私有/记忆/**)",
+      "Write(__DENIA_ROOT__/denia/私有/状态/**)",
+      "Write(__DENIA_ROOT__/denia/共享/看法/**)",
+      "Edit(__DENIA_ROOT__/denia/私有/记忆/**)",
+      "Edit(__DENIA_ROOT__/denia/私有/状态/**)",
+      "Edit(__DENIA_ROOT__/denia/共享/看法/**)"
     ]
   }
 }

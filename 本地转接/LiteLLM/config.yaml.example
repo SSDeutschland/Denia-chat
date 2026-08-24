@@ -1,0 +1,38 @@
+# LiteLLM 本地桥配置模板（端口 4000）
+# 复制本文件为 config.yaml 并填上真实 api_key（config.yaml 已被 gitignore）。
+# 启动：启动-LiteLLM.bat（首跑自动建 venv 装依赖）
+# 注意：本文件请不要写中文注释以外的非 ASCII 内容到 key 里；文件请用 UTF-8 保存。
+
+model_list:
+  # DeepSeek（Anthropic 原生端点，便宜好用，推荐新手主模型）
+  - model_name: "deepseek-v4-flash"
+    litellm_params:
+      model: "anthropic/deepseek-v4-flash"
+      api_base: "https://api.deepseek.com/anthropic"
+      api_key: "sk-你的DeepSeek-key"
+  - model_name: "deepseek-v4-pro"
+    litellm_params:
+      model: "anthropic/deepseek-v4-pro"
+      api_base: "https://api.deepseek.com/anthropic"
+      api_key: "sk-你的DeepSeek-key"
+
+  # GLM（智谱，识图能力强）
+  - model_name: "glm-5.2"
+    litellm_params:
+      model: "hosted_vllm/glm-5.2"
+      api_base: "https://open.bigmodel.cn/api/paas/v4"
+      api_key: "你的GLM-key"
+
+  # OpenAI 兼容中转站模板（按你的中转商改 api_base / model / key）
+  # - model_name: "gpt-5.5"
+  #   litellm_params:
+  #     model: "openai/gpt-5.5"
+  #     api_base: "https://你的中转站/v1"
+  #     api_key: "sk-你的中转key"
+
+general_settings:
+  master_key: "sk-denia-local"   # GUI 里 LiteLLM 预设的 token 填这个
+
+litellm_settings:
+  drop_params: true   # 静默丢弃后端不认的 Anthropic 专有参数（防 400）
+  callbacks: custom_callbacks.proxy_handler_instance   # 图片块提升（修 CC Read 图）

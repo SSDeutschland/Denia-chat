@@ -1,2 +1,4 @@
-playwright>=1.61.0
+# 钉死 1.61.0：browsers/ 里的 Chromium 是 1228 版，与 playwright 1.61 配套
+# （2026-08-02 迁徙时从旧目录直接复制浏览器二进制，>= 会装 1.62 要 1234 版浏览器导致不匹配）
+playwright==1.61.0
 playwright-stealth>=2.0.3

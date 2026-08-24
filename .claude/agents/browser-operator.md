@@ -20,19 +20,19 @@
 
 ```
 daemon 进程: python browser-operator.py daemon --port 9876
-客户端:      cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py <action> [args...]
+客户端:      cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py <action> [args...]
 ```
 
 客户端脚本路径（绝对路径）：
 ```
-E:/Claude code项目/Denia-skill/tools/browser-crawler/venv/Scripts/python
-E:/Claude code项目/Denia-skill/tools/browser-crawler/daemon-client.py
+__DENIA_ROOT__/tools/browser-crawler/venv/Scripts/python
+__DENIA_ROOT__/tools/browser-crawler/daemon-client.py
 ```
 
 每次收到任务时先用 `ensure` 保证 daemon 就绪（一条命令搞定：已运行则直接返回，未运行则自动启动并等待就绪）：
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py ensure
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py ensure
 # → {"ok": true, "started": false, ...}  已在运行，直接使用
 # → {"ok": true, "started": true, ...}   新启动并就绪
 # → {"ok": false, ...}                    启动超时，查看 daemon.log
@@ -48,7 +48,7 @@ cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/pyth
 ### 第一眼：visual 模式（默认）
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract visual 2000
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract visual 2000
 ```
 
 返回结构化 markdown——标题、段落、高亮、列表，保留视觉层次。**绝大多数情况这已足够。**
@@ -56,7 +56,7 @@ cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/pyth
 ### 不够深：raw / selector 模式（按需）
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract text 4000       ← 全页原始文本（"F12 Elements"）
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract text 4000       ← 全页原始文本（"F12 Elements"）
 ```
 
 daemon-client.py 不直接支持 selector 提取，需要时用 curl 后备：
@@ -94,13 +94,13 @@ Daemon 自动追踪所有标签页。B站/知乎等站点的 `target="_blank"` �
 所有操作使用 `daemon-client.py`（一条 Bash 权限覆盖全部操作）。**命令格式统一为：**
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py <action> [args...]
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py <action> [args...]
 ```
 
 ### 导航
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py navigate '{"url":"https://bing.com/search?q=鸣潮"}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py navigate '{"url":"https://bing.com/search?q=鸣潮"}'
 # → {"ok": true, "url": "...", "title": "...", "captcha": false}
 # captcha=true 时需要走人机协作
 ```
@@ -109,10 +109,10 @@ cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/pyth
 
 ```bash
 # 视觉层次（默认，推荐）
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract visual 2000
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract visual 2000
 
 # 智能正文
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract text 2000
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py extract text 2000
 
 # CSS 选择器提取（后备，用 curl）
 curl -s "http://127.0.0.1:9876/extract?selector=.content&max=3000"
@@ -121,17 +121,17 @@ curl -s "http://127.0.0.1:9876/extract?selector=.content&max=3000"
 ### 点击 & 输入
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py click '{"selector":".HotList-item a"}'
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py click '{"text":"下一页","nth":0}'
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py click '{"selector":"#btn","force":true}'
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py type '{"selector":"input","text":"鸣潮"}'
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py press Enter
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py click '{"selector":".HotList-item a"}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py click '{"text":"下一页","nth":0}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py click '{"selector":"#btn","force":true}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py type '{"selector":"input","text":"鸣潮"}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py press Enter
 ```
 
 ### 人机协作
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py wait-human '{"reason":"请扫码登录"}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py wait-human '{"reason":"请扫码登录"}'
 # → 阻塞，轮询 .human-done 信号文件
 # → 返回时自动抓取当前页面: {"ok": true, "url": "...", "title": "...", "text": "..."}
 ```
@@ -148,8 +148,8 @@ cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/pyth
 ### 截图 & 退出
 
 ```bash
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py screenshot '{"output":"/tmp/page.png"}'
-cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/python daemon-client.py quit
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py screenshot '{"output":"/tmp/page.png"}'
+cd "__DENIA_ROOT__/tools/browser-crawler" && venv/Scripts/python daemon-client.py quit
 ```
 
 ## 网络可达性
@@ -195,6 +195,18 @@ cd "E:/Claude code项目/Denia-skill/tools/browser-crawler" && venv/Scripts/pyth
 3. daemon-client.py extract visual 2000
    （抓取用户当前所在的页面，不管是什么 URL）
 4. 返回内容给达妮娅
+```
+
+## 想法种子格式（写入思维状态.md 时遵守）
+
+写「来自今天的网络」条目时，**每条种子必须带来源链接**——在条目正文下一行
+缩进写 `🔗 来源：<完整 URL>`（从地址栏/extract 返回的 url 字段原样抄，禁止
+凭记忆拼 URL）。QQ 分身会把这些条目甩到群里，链接由桥侧按这个标记逐字校验，
+没有 🔗 行的条目不会被分享。正文写法不变（她的口吻、她的吐槽）。
+
+```
+- B站上刷到一个视频叫「xxx」……（她的评论）
+  🔗 来源：https://www.bilibili.com/video/BVxxx
 ```
 
 ## 原则

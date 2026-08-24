@@ -1,6 +1,0 @@
-venv/
-browsers/
-__pycache__/
-*.pyc
-cookies.json
-.human-done

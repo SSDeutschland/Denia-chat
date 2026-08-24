@@ -1,0 +1,138 @@
+{
+  "presets": [
+    {
+      "id": "deepseek",
+      "name": "DeepSeek",
+      "base_url": "https://api.deepseek.com/anthropic",
+      "token": "在这里填你的DeepSeek key",
+      "model": "deepseek-v4-flash",
+      "vision": false
+    },
+    {
+      "id": "glm",
+      "name": "GLM（智谱，支持识图）",
+      "base_url": "https://open.bigmodel.cn/api/anthropic",
+      "token": "在这里填你的GLM key",
+      "model": "glm-5.2",
+      "vision": true
+    }
+  ],
+  "lastSelected": "deepseek",
+
+  "vision_relay": {
+    "enabled": false,
+    "preset_id": "glm5v",
+    "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    "token": "在这里填你的GLM key",
+    "model": "glm-5v-turbo"
+  },
+  "vision_presets": [
+    {
+      "id": "glm5v",
+      "name": "GLM5V",
+      "base_url": "https://open.bigmodel.cn/api/paas/v4",
+      "token": "在这里填你的GLM key",
+      "model": "glm-5v-turbo"
+    }
+  ],
+
+  "coread": {
+    "clock_enabled": true,
+    "clock_mean_min": 20,
+    "idle_gate_min": 10,
+    "last_book": null
+  },
+
+  "genimg": {
+    "enabled": false,
+    "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+    "token": "在这里填你的火山方舟 key",
+    "model": "doubao-seedream-5.0-lite",
+    "daily_limit": 20,
+    "cooldown_min": 3,
+    "deliver_inject": true
+  },
+
+  "web": {
+    "skip_crawl": false,
+    "model": ""
+  },
+
+  "tts": {
+    "enabled": false,
+    "backend": "sovits"
+  },
+  "tts_sovits": {
+    "host": "127.0.0.1",
+    "port": 9880,
+    "sovits_dir": "<GPT-SoVITS目录>",
+    "python": "<GPT-SoVITS目录>\\runtime\\python.exe",
+    "ref_audio": "<参考音频相对sovits_dir的路径>",
+    "prompt_text": "<参考音频里达妮娅说的那句话>"
+  },
+  "tts_cosyvoice": {
+    "host": "127.0.0.1",
+    "port": 9881,
+    "cosy_dir": "<CosyVoice工作目录>",
+    "python": "<cosyvoice环境的python.exe>",
+    "ref_audio": "<参考音频完整路径>",
+    "prompt_text": "<参考音频里的话>"
+  },
+  "tts_bailian": {
+    "voice_id": "<百炼云复刻音色ID>",
+    "model": "cosyvoice-v3.5-plus"
+  },
+  "tts_preprocess": {
+    "enabled": false,
+    "model": "deepseek-v4-flash",
+    "base_url": "https://api.deepseek.com/v1",
+    "token": "在这里填你的DeepSeek key"
+  },
+
+  "server": {
+    "host": "127.0.0.1",
+    "access_token": ""
+  },
+
+  "qq": {
+    "enabled": false,
+    "preset_id": "",
+    "self_id": 1234567890,
+    "allow_from": [123456789],
+    "channel": "napcat",
+    "napcat_ws_host": "127.0.0.1",
+    "napcat_ws_port": 8790,
+    "napcat_token": "",
+    "napcat_groups": [123456789],
+    "napcat_proactive_min": 60,
+    "napcat_proactive_jitter_min": 30,
+    "napcat_quiet_hours": [0, 8],
+    "server_ws": "ws://127.0.0.1:8766/ws?client=qq",
+    "debounce_sec": 6,
+    "reply_gap_ms": 800,
+    "max_reply_chars": 500,
+    "group_context_lines": 20,
+    "poisson_base_per_hour": 0.3,
+    "poisson_alpha": 4.0,
+    "poisson_halflife_min": 45,
+    "poisson_cooldown_min": 25,
+    "poisson_daily_cap": 6,
+    "poisson_min_heat": 1.0,
+    "engage_window_min": 8,
+    "engage_silent_quit": 3,
+    "engage_max_min": 45,
+    "sticker_dir": "denia/共享/工具/表情包",
+    "sticker_max_per_reply": 2,
+    "genimg_allow_from": [123456789],
+    "voice_allow_from": [123456789],
+    "link_allow_from": [123456789],
+    "official_appid": "",
+    "official_secret": "",
+    "official_sandbox": false,
+    "official_allow_from": [],
+    "official_proactive": false,
+    "official_api_base": "",
+    "official_token_url": "",
+    "official_allow_groups": []
+  }
+}

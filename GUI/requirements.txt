@@ -1,3 +1,9 @@
 claude-agent-sdk==0.2.124
 websockets==16.1.1
-pillow
+pillow==12.3.0
+pyyaml>=6.0
+# 以下三行是依赖钉版：新版 pip 解析器对 mcp→pyjwt[crypto]→cryptography 链会误报
+# "no matching distributions"（2026-08-02 迁移时实测），钉死旧 venv 实测可用版本绕过
+mcp==1.28.1
+pyjwt[crypto]==2.13.0
+cryptography==49.0.0

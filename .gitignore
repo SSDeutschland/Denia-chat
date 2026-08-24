@@ -16,16 +16,45 @@ desktop.ini
 !.claude/skills/
 !.claude/agents/
 
-# Debug logs (may contain personal conversation data)
-debug记录/
+# ===== 钥匙与运行时产物（绝不入库） =====
+GUI/presets.json
+GUI/.env.local
+GUI/out/
+GUI/venv/
+本地转接/LiteLLM/config.yaml
+本地转接/LiteLLM/venv/
+本地转接/LiteLLM/logs*.txt
+本地转接/LiteLLM/__pycache__/
+包信息.json
 
-# Browser crawler runtime files
+# ===== 她的生活痕迹（私有区随对话增长的部分；空壳模板保留入库） =====
+denia/私有/记忆/长期记忆/虚质之后/对话记忆/*
+!denia/私有/记忆/长期记忆/虚质之后/对话记忆/_索引.md
+denia/私有/共读/*
+!denia/私有/共读/README.md
+
+# ===== QQ 缓冲运行态 =====
+denia/缓冲/图片缓存/
+denia/缓冲/群聊记录/*.log
+denia/缓冲/群聊记录/eyes_state.json
+denia/缓冲/表情包缓存.json
+denia/缓冲/用户档案/*
+!denia/缓冲/用户档案/_模板.md
+!denia/缓冲/用户档案/_索引.md
+
+# ===== 浏览器爬虫运行态 =====
 tools/browser-crawler/daemon*.log
 tools/browser-crawler/cookies.json
+tools/browser-crawler/venv/
+tools/browser-crawler/browsers/
 tools/browser-crawler/*.png
 tools/browser-crawler/*_test.txt
 tools/browser-crawler/*_test.json
 tools/browser-crawler/*_output.json
+
+# Python
+__pycache__/
+*.pyc
 
 # Large binaries
 *.zip

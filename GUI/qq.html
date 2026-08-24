@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>达妮娅 · QQ 控制中心</title>
+<style>
+  :root{
+    --bg:#f5f0ea; --card:#fffdf9; --ink:#4a4038; --dim:#9a8f83;
+    --line:#e8dfd4; --accent:#c98a5e; --accent-soft:#f3e3d5;
+    --ok:#5a9e6f; --bad:#c25e5e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--bg); color:var(--ink); font:14px/1.6 "Microsoft YaHei",sans-serif;
+        display:flex; justify-content:center; padding:24px 12px 60px; }
+  main{ width:100%; max-width:560px; }
+  h1{ font-size:18px; font-weight:600; margin-bottom:2px; }
+  .sub{ color:var(--dim); font-size:12px; margin-bottom:18px; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:12px;
+         padding:16px 18px; margin-bottom:14px; }
+  .card h2{ font-size:13px; color:var(--dim); font-weight:600; margin-bottom:10px;
+            letter-spacing:.05em; }
+  .row{ display:flex; align-items:center; justify-content:space-between;
+        padding:7px 0; gap:10px; }
+  .row + .row{ border-top:1px dashed var(--line); }
+  .k{ color:var(--dim); flex-shrink:0; }
+  .v{ text-align:right; word-break:break-all; }
+  .dot{ display:inline-block; width:8px; height:8px; border-radius:50%;
+        margin-right:6px; vertical-align:1px; background:var(--dim); }
+  .dot.on{ background:var(--ok); } .dot.off{ background:var(--bad); }
+  button{ font:inherit; color:var(--ink); background:var(--accent-soft);
+          border:1px solid var(--line); border-radius:8px; padding:6px 16px;
+          cursor:pointer; }
+  button:hover{ filter:brightness(.97); }
+  button:disabled{ opacity:.45; cursor:default; }
+  button.primary{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  button.danger{ background:#f6e3e3; color:var(--bad); }
+  select,input[type=text]{ font:inherit; color:var(--ink); background:#fff;
+          border:1px solid var(--line); border-radius:8px; padding:5px 8px;
+          max-width:260px; }
+  /* 与主聊天统一的 .sw 滑动开关 */
+  .sw{ position:relative; width:40px; height:22px; flex-shrink:0; cursor:pointer; }
+  .sw input{ display:none; }
+  .sw i{ position:absolute; inset:0; background:#ddd; border-radius:22px; transition:.2s; }
+  .sw i::after{ content:""; position:absolute; left:3px; top:3px; width:16px; height:16px;
+        background:#fff; border-radius:50%; transition:.2s; }
+  .sw input:checked + i{ background:var(--accent); }
+  .sw input:checked + i::after{ transform:translateX(18px); }
+  .toast{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
+          background:#3d352e; color:#fff; padding:8px 18px; border-radius:20px;
+          font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none; }
+  .toast.show{ opacity:.92; }
+  .hint{ font-size:12px; color:var(--dim); margin-top:8px; }
+  a{ color:var(--accent); text-decoration:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🐾 QQ 控制中心</h1>
+  <div class="sub">达妮娅公开分身的开关面板 · <a href="/">← 回主聊天</a></div>
+
+  <div class="card">
+    <h2>状态</h2>
+    <div class="row"><span class="k">桥进程</span><span class="v" id="stProc">…</span></div>
+    <div class="row"><span class="k">分身</span><span class="v" id="stOnline">…</span></div>
+    <div class="row"><span class="k">NapCat</span><span class="v" id="stNapcat">…</span></div>
+    <div class="row"><span class="k">当前模型</span><span class="v" id="stModel">…</span></div>
+    <div class="row"><span class="k">今日生图</span><span class="v" id="stGen">…</span></div>
+    <div class="row">
+      <span class="k"></span>
+      <span>
+        <button class="primary" id="btnStart">上线</button>
+        <button class="danger" id="btnStop" style="margin-left:8px">离线</button>
+        <button id="btnReset" style="margin-left:8px">重置会话</button>
+      </span>
+    </div>
+    <div class="hint" id="procHint"></div>
+    <div class="hint">「重置会话」丢弃当前聊天上下文开全新会话（历史记录文件保留，只是不再接回）；skill 新规要新会话才会加载。</div>
+  </div>
+
+  <div class="card">
+    <h2>行为模式</h2>
+    <div class="row">
+      <span class="k">主动说话（泊松插话）</span>
+      <label class="sw"><input type="checkbox" id="swProactive"><i></i></label>
+    </div>
+    <div class="row">
+      <span class="k">免打扰（群里只应@）</span>
+      <label class="sw"><input type="checkbox" id="swDnd"><i></i></label>
+    </div>
+    <div class="row">
+      <span class="k">浏览器（允许她上网）</span>
+      <label class="sw"><input type="checkbox" id="swWeb"><i></i></label>
+    </div>
+    <div class="hint">开关即存即生效（热重载，不掉会话）。浏览器开关只放行爬虫子 agent 与其 daemon 命令，其余工具照旧不开放。</div>
+  </div>
+
+  <div class="card">
+    <h2>语音</h2>
+    <div class="row"><span class="k">语音服务</span><span class="v" id="stVoice">…</span></div>
+    <div class="row">
+      <span class="k">语音模型</span>
+      <span><select id="selVoice"></select>
+        <button id="btnVoice" style="margin-left:6px">切换</button></span>
+    </div>
+    <div class="hint">她在 QQ 里写 [语音:…] 时用这条声道合成（与主聊天同一套 TTS）。切换后旧后端即停，新后端首次发声时懒启动（冷启要等几十秒）。</div>
+  </div>
+
+  <div class="card">
+    <h2>模型</h2>
+    <div class="row">
+      <span class="k">主模型</span>
+      <span><select id="selMain"></select>
+        <button id="btnMain" style="margin-left:6px">切换</button></span>
+    </div>
+    <div class="row">
+      <span class="k">生图模型</span>
+      <span><input type="text" id="inGen">
+        <button id="btnGen" style="margin-left:6px">保存</button></span>
+    </div>
+    <div class="row">
+      <span class="k">细看模型</span>
+      <span><input type="text" id="inLook">
+        <button id="btnLook" style="margin-left:6px">保存</button></span>
+    </div>
+    <div class="row">
+      <span class="k">略读模型</span>
+      <span><input type="text" id="inGlance">
+        <button id="btnGlance" style="margin-left:6px">保存</button></span>
+    </div>
+    <div class="hint">主模型切换只作用于当前会话（桥重启后回预设默认）；其余三个写配置热生效。</div>
+  </div>
+
+  <div class="card">
+    <h2>记忆</h2>
+    <div class="row">
+      <span class="k">让她立刻整理最近的记忆</span>
+      <button id="btnArchive">现在整理记忆</button>
+    </div>
+    <div class="hint">注入一条维护提示，她按写入协议收拾公开记忆/档案，整理好会在 QQ 跟你说一声。</div>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+function guiKey(){ return localStorage.getItem('denia_gui_key')||''; }
+function wsUrl(){
+  const k = guiKey();
+  const q = ['client=console'];
+  if (k) q.push('key='+encodeURIComponent(k));
+  return `ws://${location.hostname}:8766/ws?`+q.join('&');
+}
+const $ = id => document.getElementById(id);
+let ws = null, pollTimer = null;
+
+function toast(msg){
+  const el = $('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+function fmtDot(on, onText, offText){
+  return `<span class="dot ${on===null?'':(on?'on':'off')}"></span>` +
+         (on===null?'未知':(on?onText:offText));
+}
+
+function render(s){
+  $('stProc').innerHTML = s.connected
+    ? fmtDot(true,'已连入','') + (s.owned?`（控制台托管 pid=${s.pid}）`:'（外部启动）')
+    : fmtDot(false,'','未运行');
+  $('stOnline').innerHTML = fmtDot(s.connected ? s.online : null, '在线', '离线');
+  const np = s.napcat || {};
+  $('stNapcat').innerHTML =
+    np.state==='connected' ? fmtDot(true,'已连入','') + (np.at?` ${np.at}`:'') :
+    np.state==='disconnected' ? fmtDot(false,'','断开') + (np.at?` ${np.at}`:'') :
+    fmtDot(null);
+  $('stModel').textContent = s.model || '—';
+  $('stGen').textContent = `${s.genimg_today} / ${s.genimg_limit}`;
+  $('procHint').textContent = s.enabled ? '' :
+    'qq.enabled=false：设置面板里还没打开 QQ 桥开关，上线会被拒。';
+  // 开关只在未聚焦时回写，防轮询踩掉用户刚点的状态
+  if (document.activeElement !== $('swProactive')) $('swProactive').checked = !!s.proactive;
+  if (document.activeElement !== $('swDnd')) $('swDnd').checked = !!s.dnd;
+  if (document.activeElement !== $('swWeb')) $('swWeb').checked = !!s.web;
+  // 语音卡片
+  $('stVoice').innerHTML = !s.voice_enabled
+    ? fmtDot(false,'','未开启（主聊天 ⚙ 语音里打开）')
+    : fmtDot(!!s.voice_running, '在跑', '未启动（首次发声时懒启动）');
+  const vsel = $('selVoice');
+  const vwant = JSON.stringify(s.voice_backends||[]);
+  if (vsel._opts !== vwant){
+    vsel._opts = vwant;
+    vsel.innerHTML = (s.voice_backends||[])
+      .map(b=>`<option value="${b.id}">${b.label}</option>`).join('');
+  }
+  if (s.voice_backend && [...vsel.options].some(o=>o.value===s.voice_backend))
+    vsel.value = s.voice_backend;
+  // 模型下拉：保留用户已选，只重建选项集
+  const sel = $('selMain');
+  const want = JSON.stringify(s.litellm_aliases||[]);
+  if (sel._opts !== want){
+    sel._opts = want;
+    sel.innerHTML = (s.litellm_aliases||[])
+      .map(a=>`<option value="${a}">${a}</option>`).join('');
+  }
+  if (s.model && [...sel.options].some(o=>o.value===s.model)) sel.value = s.model;
+  if (!$('inGen').matches(':focus')) $('inGen').value = s.genimg_model||'';
+  if (!$('inLook').matches(':focus')) $('inLook').value = s.look_model||'';
+  if (!$('inGlance').matches(':focus')) $('inGlance').value = s.glance_model||'';
+  $('btnStart').disabled = !!s.starting || (s.connected && s.online);
+  $('btnStop').disabled = !!s.starting || !s.connected;
+}
+
+function connect(){
+  ws = new WebSocket(wsUrl());
+  ws.onopen = () => {
+    send({type:'qq_status'});
+    clearInterval(pollTimer);
+    pollTimer = setInterval(()=>send({type:'qq_status'}), 4000);
+  };
+  ws.onmessage = ev => {
+    let d; try{ d = JSON.parse(ev.data); }catch{ return; }
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'qq_status') render(d);
+    else if (d.type === 'qq_start_result'){
+      toast(d.ok ? '桥已上线' : ('上线失败：'+d.msg)); send({type:'qq_status'});
+    }
+    else if (d.type === 'qq_stop_result'){
+      toast(d.ok ? '桥已离线' : ('离线失败：'+d.msg)); send({type:'qq_status'});
+    }
+    else if (d.type === 'qq_model_set'){
+      toast(d.error ? d.error : `${d.target} 模型 → ${d.model}`);
+      send({type:'qq_status'});
+    }
+    else if (d.type === 'qq_modes_set'){
+      toast(`主动说话 ${d.proactive?'开':'关'} · 免打扰 ${d.dnd?'开':'关'} · 浏览器 ${d.web?'开':'关'}` +
+            (d.hot ? '' : '（桥不在线，下次启动生效）'));
+    }
+    else if (d.type === 'qq_voice_set'){
+      toast(d.ok ? `语音模型 → ${d.backend}` : ('切换失败：'+d.error));
+      send({type:'qq_status'});
+    }
+    else if (d.type === 'qq_reset_result'){
+      toast(d.ok ? '已重置：全新会话已建立' : ('重置失败：'+d.error));
+      send({type:'qq_status'});
+    }
+    else if (d.type === 'qq_archive_result'){
+      toast(d.error ? d.error : '已跟她说：现在整理记忆');
+    }
+    else if (d.type === 'auth_failed'){
+      toast('口令缺失/错误——先从主聊天页过锁屏');
+      clearInterval(pollTimer);
+    }
+  };
+  ws.onclose = () => {
+    clearInterval(pollTimer);
+    setTimeout(connect, 3000);
+  };
+}
+function send(o){ if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+
+$('btnStart').onclick = () => send({type:'qq_start'});
+$('btnStop').onclick = () => {
+  if (confirm('确定让她从 QQ 离线？')) send({type:'qq_stop'});
+};
+$('swProactive').onchange = () =>
+  send({type:'qq_set_modes', proactive:$('swProactive').checked, dnd:$('swDnd').checked,
+        web:$('swWeb').checked});
+$('swDnd').onchange = () =>
+  send({type:'qq_set_modes', proactive:$('swProactive').checked, dnd:$('swDnd').checked,
+        web:$('swWeb').checked});
+$('swWeb').onchange = () =>
+  send({type:'qq_set_modes', proactive:$('swProactive').checked, dnd:$('swDnd').checked,
+        web:$('swWeb').checked});
+$('btnVoice').onclick = () =>
+  send({type:'qq_set_voice', backend:$('selVoice').value});
+$('btnMain').onclick = () =>
+  send({type:'qq_set_model', target:'main', model:$('selMain').value});
+$('btnGen').onclick = () =>
+  send({type:'qq_set_model', target:'genimg', model:$('inGen').value.trim()});
+$('btnLook').onclick = () =>
+  send({type:'qq_set_model', target:'look', model:$('inLook').value.trim()});
+$('btnGlance').onclick = () =>
+  send({type:'qq_set_model', target:'glance', model:$('inGlance').value.trim()});
+$('btnArchive').onclick = () => send({type:'qq_archive_now'});
+$('btnReset').onclick = () => {
+  if (confirm('确定重置 QQ 会话？当前聊天上下文会丢弃（历史记录文件保留），'
+              + '她将以全新会话重新加载最新 skill。')) send({type:'qq_reset_session'});
+};
+
+connect();
+</script>
+</body>
+</html>

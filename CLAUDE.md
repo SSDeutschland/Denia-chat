@@ -1,60 +1,47 @@
-# Denia-skill 项目
+# Denia 项目说明（给 AI / 开发者看）
 
-融合《鸣潮》角色达妮娅与 AI 助手的 Claude Code Skill。
+融合《鸣潮》角色达妮娅与 AI 助手的 Claude Code Skill。公开版 v0.5.0。
 
 ## 快速启动
 
 ```bash
-# 方式一：在本目录下启动 Claude Code，然后输入 /denia
-cd "E:/Claude code项目/Denia-skill"
+# 终端模式：本目录启动 Claude Code，输入 /denia
 claude
 
-# 方式二：使用启动脚本
-# Windows: 双击 启动-denia.bat
-# Git Bash: ./启动-denia.sh
+# GUI 网页模式：双击 启动达妮娅GUI.bat（首跑自动建 GUI/venv 装依赖）
+# 浏览器打开 http://127.0.0.1:8765，⚙ 设置里配模型预设
 
-# 方式三：GUI 网页模式（与终端同一套 skill/记忆，封装真实 CC 运行时）
-# Windows: 双击 启动达妮娅GUI.bat（首跑自动建 GUI/venv 装依赖）
-# 浏览器打开 http://127.0.0.1:8765，点 ⚙ 选模型预设后开始聊
+# 首次 clone 后必须先跑一次：首次运行-初始化.bat（替换 __DENIA_ROOT__ 路径占位符）
 ```
 
-## 项目概述
-- **角色**：达妮娅（Dania），《鸣潮》3.3版本登场的五星角色
-- **架构**：三层架构（L0编排 / L1思维 / L2对话）+ 分级加载 + Agent分线程委托
-- **人格模型**：8维度性格画像，人格驱动思维与表达，事实信息按需检索
-- **记忆系统**：按虚质空间分界线分区 — 虚质之前（游戏剧情）+ 虚质之后（用户相关）
-- **情绪系统**：触发→响应动态规则 + 三种强度曲线（突发/累积/底色偏移）
-- **当前版本**：v0.4.0 — GUI 网页模式 + 识图转接 + 对话记忆架构升级
+## 架构
 
-## 最近更新 (2026-07-26)
-- ✅ **GUI 抗中断三功能**（针对连接不稳定丢记录，已实测已 commit，personal 分支）：
-  - 💾 **存档/续接**：对话内容一直在 CLI transcript（jsonl），崩溃丢的只是指针。侧栏 💾 开浮层，底部按钮存档、列表每条「续接」读档、虚线框「上次会话」每轮自动兜底。走 `ClaudeAgentOptions.resume` 续接会话历史。实测断线重连后记忆完整。
-  - 📄 **导出对话记录**：`get_session_messages` 读 transcript 渲成 markdown 存 `GUI/out/exports/`，L1 内心独白直接展开，过滤系统噪声。
-  - 🗜 **压缩上下文**：发 `/compact` 穿透 SDK，有损（带确认框）。想留完整记录先导出再压缩。
-- ✅ **GUI 源码首次入库**：`GUI/` 前后端源码入 git（venv/out/presets.json 由 GUI/.gitignore 排除）。
-- ✅ **识图转接（vision relay）**（盲模型也能"看"图，已实测已 commit `286a57b`/`c49cf98`）：
-  - 👁 **代看**：主模型不支持识图（`vision=false`）时，用户发图先交给独立识图模型（OpenAI 兼容接口，GLM `glm-4v-plus-0111`），**带最近对话上下文**定向描述，描述文字替代"请 Read"提示注入达妮娅消息。⚙ 设置面板 👁 表单配置（存 presets.json，改模型零代码）。
-  - 🔍 **ask_vision 追问**：盲模型挂进程内 MCP 工具，达妮娅觉得初步描述不够时可主动追问识图助手（每批图上限 3 次）。实测 DeepSeek 盲模型连追 3 次细节，回应自然。
-  - ⚠️ 识图模型有顺从倾向，细节答案当参考非绝对事实（方案固有精度上限）。
-- 🔴 **下一步**：GUI 前端按钮真实浏览器验证 + 无爬取失效三层修复（方案文档 §1，仍待做）
-
-## 历史更新 (2026-06-24)
-- ✅ 情绪动态规则、用户记忆框架、分区联动更新（详见记忆文件）
-
-## 可用 Skill
-- `/denia` — 启动达妮娅角色扮演模式
-  > ⚠️ 加载后，首次回复前必须在后台 spawn Browser Operator Agent 更新想法池（浏览 1-2 方向 → 生成 2-3 条种子 → 写入思维状态.md），达妮娅先打招呼不等爬虫
+- 三层对话架构：L0 编排 / L1 思维（内心独白）/ L2 对话，分级加载 + Agent 分线程委托
+- 人格模型：8 维度性格画像，人格驱动思维与表达，事实信息按需检索
+- 记忆系统：虚质空间分界线分区——`denia/共享/记忆-虚质之前/`（游戏剧情，固定）+ `denia/私有/`（用户相关，增长）
+- 情绪系统：触发→响应动态规则 + 三种强度曲线（突发/累积/底色偏移），寄生在 `denia/私有/状态/情绪状态.md`
+- 公开分身（QQ）：`denia/缓冲/` 单向阀隔离，分身物理不挂载主私有记忆
 
 ## 关键文件
-- `.claude/skills/denia/SKILL.md` — Skill 主入口（被 Claude Code 加载）
-- `project/设定/核心人设.md` — 人格模型（8维度 + L1/L2行为规则）
-- `project/设定/扩展设定.md` — 事实信息库（经历、世界观）
-- `project/设定/人物关系.md` — 关系事实库（触发检索）
-- `project/设定/创作参考.md` — 作者参考（人物塑造框架、设计意图）
-- `project/记忆/长期记忆/虚质之前/` — 游戏剧情记忆（固定不变，已拆分主题目录）
-- `project/记忆/长期记忆/虚质之后/用户档案.md` — 用户信息累积存储
-- `project/记忆/长期记忆/虚质之后/对话记忆/` — 重要对话记录（2026-07-27 拆分：一次连接一个文件 + `_索引.md`，归档只写新文件不读旧条目；旧 `对话记忆.md` 留作重定向存根）
-- `project/状态/情绪状态.md` — 当前情绪 + 动态规则系统
-- `角色台词.txt` — 游戏内台词（L2语言风格校准素材）
-- `游戏原文.txt` — 游戏内角色介绍原文
-- `人物信息补充.txt` — 详细角色经历与塑造解析
+
+- `.claude/skills/denia/SKILL.md` — Skill 主入口
+- `.claude/skills/denia-read/SKILL.md` — 共读模式
+- `.claude/skills/denia-qq/SKILL.md` — QQ 分身人格侧
+- `denia/共享/设定/核心人设.md` — 人格模型
+- `denia/私有/记忆/近期主线.md` — 启动必读（15 条滚动 + →#NNN 指针）
+- `denia/私有/记忆/记忆总索引.md` — 两跳检索菜单
+- `GUI/server_sdk.py` — GUI 后端（claude-agent-sdk 封装，全托管 LiteLLM/TTS/QQ 桥进程）
+- `tools/` — browser-crawler（想法池/上网）、生图、共读预处理、qq-bridge
+- `本地转接/LiteLLM/` — 可选本地模型桥
+
+## 配置
+
+- 所有功能开关与钥匙集中在 `GUI/presets.json`（gitignore；模板 `GUI/presets.example.json`）
+- 配置教程在 `docs/`：API 钥匙 / TTS 语音 / QQ 分身 / LiteLLM 桥
+- `__DENIA_ROOT__` 占位符：仓库与便携包统一协议，`tools_pack/init.py` 首启替换为实际路径
+
+## 硬规则（给维护者）
+
+- `denia/私有/` 增长内容、`GUI/presets.json`、`.env.local`、`本地转接/LiteLLM/config.yaml` 永不入库（.gitignore 已钉）
+- `*.bat` 必须 GBK 编码 + CRLF 行尾（.gitattributes 已钉 eol=crlf）
+- 公开发布流程：实验室仓库 `封装工程/build_release.py` 装配 → grep 闸门 → 本仓库提交
