@@ -60,8 +60,7 @@
 
 她的想法池靠内置浏览器爬虫。首次启用跑一次安装（约下载 150MB Chromium）：
 
-- **git 版**：双击 `tools/browser-crawler/` 里的 `setup.py`（需系统 Python）
-- **便携包**：双击包根目录的 `安装浏览器爬虫.bat`
+双击仓库根目录的 `安装浏览器爬虫.bat`（需已装 Python），或直接运行 `tools/browser-crawler/setup.py`。
 
 装完即自动生效。不想要她上网：GUI ⚙ 里勾选「跳过想法池爬取」。
 
