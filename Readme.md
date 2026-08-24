@@ -7,16 +7,16 @@
 
 ## 三分钟上手（Windows）
 
-**什么都不用装版（便携包）**：从 [Releases](../../releases) 下载 `Denia-portable-*.zip` → 解压 → 双击 `首次运行-初始化.bat` → 双击 `启动达妮娅GUI.bat` → 浏览器里点 ⚙ 填入模型 key（见下）→ 开聊。
+**标准安装（git clone，Windows）**：
 
-**会装 Python 版（git clone）**：
+先装一次 [Python 3.10+](https://www.python.org/downloads/)（安装时勾选 **Add to PATH**），然后：
 
 ```bash
 git clone https://github.com/SSDeutschland/Denia-chat.git
 cd Denia-chat
 ```
 
-然后双击 `首次运行-初始化.bat`（把文件里的路径占位符替换成你的实际位置，只跑一次）→ 双击 `启动达妮娅GUI.bat`（首跑自动建环境装依赖）→ 浏览器自动打开 http://127.0.0.1:8765。
+双击 `首次运行-初始化.bat`（把文件里的路径占位符替换成你的实际位置，只跑一次）→ 双击 `启动达妮娅GUI.bat`（首跑自动建环境装依赖）→ 浏览器自动打开 http://127.0.0.1:8765。
 
 **终端党**：在本目录运行 `claude`，输入 `/denia`。
 
